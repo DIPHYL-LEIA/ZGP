@@ -4,6 +4,7 @@
 #include "BaseCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UObject/ConstructorHelpers.h"
+#include "StatsComponent.h"
 
 
 // Sets default values

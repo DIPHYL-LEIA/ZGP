@@ -4,6 +4,7 @@
 #include "PlayerCharacter.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 APlayerCharacter::APlayerCharacter()
 {
@@ -15,4 +16,24 @@ APlayerCharacter::APlayerCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+}
+
+void APlayerCharacter::OnTagIn_Implementation()
+{
+	SetActorHiddenInGame(false);
+	SetActorEnableCollision(true);
+	SetActorTickEnabled(true);
+	GetCharacterMovement()->Activate();
+
+	UE_LOG(LogTemp, Warning, TEXT("%s Tagged In"), *GetName());
+}
+
+void APlayerCharacter::OnTagOut_Implementation()
+{
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+	SetActorTickEnabled(false);
+	GetCharacterMovement()->Deactivate();
+
+	UE_LOG(LogTemp, Warning, TEXT("%s Tagged Out"), *GetName());
 }
