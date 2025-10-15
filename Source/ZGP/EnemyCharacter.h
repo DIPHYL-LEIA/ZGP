@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ZGPCharacter.h"
+#include "BaseCharacter.h"
 #include "EnemyCharacter.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ZGP_API AEnemyCharacter : public AZGPCharacter
+class ZGP_API AEnemyCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
 	

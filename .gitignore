@@ -12,6 +12,7 @@
 *.obj
 
 # Assets
+Content/StellarGirlCeleste
 
 # Precompiled Headers
 *.gch
