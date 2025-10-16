@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "TagSystemComponent.generated.h"
 
+class AActor;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ZGP_API UTagSystemComponent : public UActorComponent
@@ -15,14 +16,21 @@ class ZGP_API UTagSystemComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UTagSystemComponent();
+	void RequestTag();
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	void InitializeTeam();
 
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+private:
+
+	UPROPERTY()
+	int32 CurrentActiveIndex;
 
 		
 };

@@ -2,15 +2,19 @@
 
 
 #include "TagSystemComponent.h"
+#include "Taggable.h"
+#include "GameFramework/PlayerState.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values for this component's properties
 UTagSystemComponent::UTagSystemComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
+	CurrentActiveIndex = -1;
+}
 
-	// ...
+void UTagSystemComponent::RequestTag()
+{
 }
 
 
@@ -18,9 +22,12 @@ UTagSystemComponent::UTagSystemComponent()
 void UTagSystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
+	InitializeTeam();
 	
+}
+
+void UTagSystemComponent::InitializeTeam()
+{
 }
 
 
