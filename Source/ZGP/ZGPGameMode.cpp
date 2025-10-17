@@ -8,7 +8,17 @@
 
 AZGPGameMode::AZGPGameMode()
 {
-	DefaultPawnClass = APlayerCharacter::StaticClass();
+	static ConstructorHelpers::FClassFinder<APlayerCharacter> PlayerCharacterClass(TEXT("/Game/bp-zgpPlayer.bp-zgpPlayer_c"));
+	if (PlayerCharacterClass.Succeeded())
+	{
+		DefaultPawnClass = PlayerCharacterClass.Class;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to find Player"));
+		DefaultPawnClass = APlayerCharacter::StaticClass();
+	}
+
 
 	PlayerControllerClass = AZGPPlayerController::StaticClass();
 

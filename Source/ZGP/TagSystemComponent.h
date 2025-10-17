@@ -30,7 +30,7 @@ public:
 private:
 
 	UPROPERTY()
-	int32 CurrentActiveIndex;
+	int32 CurrentCharacterIndex;
 
 		
 };

@@ -10,7 +10,7 @@
 UTagSystemComponent::UTagSystemComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-	CurrentActiveIndex = -1;
+	CurrentCharacterIndex = -1;
 }
 
 void UTagSystemComponent::RequestTag()
