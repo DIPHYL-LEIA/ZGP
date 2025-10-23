@@ -7,16 +7,29 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 
-#include "ZGPPlayerController.h" // 컨트롤러의 InputAction 에셋에 접근하기 위해
+#include "ZGPPlayerController.h"
 #include "InputAction.h"
 
 APlayerCharacter::APlayerCharacter()
 {
+	GetCapsuleComponent()->InitCapsuleSize(34.f, 88.f);
+
+	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
+	GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, -0.f));
+
 	m_SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	m_SpringArm->SetupAttachment(RootComponent);
 	m_SpringArm->TargetArmLength = 400.f;
 	m_SpringArm->bUsePawnControlRotation = true;
+
+	m_SpringArm->SocketOffset = FVector(0.f, 50.f, 70.f);
+	m_SpringArm->bEnableCameraLag = true;
+	m_SpringArm->CameraLagSpeed = 10.f;
+
+	m_SpringArm->bDoCollisionTest = true;
 
 	m_Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	m_Camera->SetupAttachment(m_SpringArm);
@@ -81,12 +94,6 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 				EnhancedInputComponent->BindAction(PlayerController->IA_Jump, ETriggerEvent::Started, this, &ACharacter::Jump);
 				EnhancedInputComponent->BindAction(PlayerController->IA_Jump, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 			}
-
-			UE_LOG(LogTemp, Warning, TEXT("PlayerCharacter::SetupPlayerInputComponent SUCCESS. Actions bound."));
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("PlayerCharacter::SetupPlayerInputComponent FAILED: GetController() is NOT a ZGPPlayerController!"));
 		}
 	}
 }
