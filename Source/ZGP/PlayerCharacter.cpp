@@ -74,28 +74,6 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
-	{
-		if (AZGPPlayerController* PlayerController = Cast<AZGPPlayerController>(GetController()))
-		{
-			if (PlayerController->IA_Move)
-			{
-				EnhancedInputComponent->BindAction(PlayerController->IA_Move, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
-			}
-
-			if (PlayerController->IA_Look)
-			{
-				EnhancedInputComponent->BindAction(PlayerController->IA_Look, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
-			}
-
-			if (PlayerController->IA_Jump)
-			{
-				EnhancedInputComponent->BindAction(PlayerController->IA_Jump, ETriggerEvent::Started, this, &ACharacter::Jump);
-				EnhancedInputComponent->BindAction(PlayerController->IA_Jump, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-			}
-		}
-	}
 }
 
 void APlayerCharacter::OnTagIn_Implementation()

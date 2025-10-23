@@ -15,11 +15,11 @@ class ZGP_API AZGPPlayerController : public APlayerController
 public:
 	AZGPPlayerController();
 
-	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 
-public:
-	
+protected:
+	virtual void BeginPlay() override;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<class UInputMappingContext> IMC_Default = nullptr;
 
@@ -36,5 +36,10 @@ protected:
 	// (선택)입력 매핑 우선 순위 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	int32 DefaultInputMappingPriority = 0;
+
+	void HandleMove(const struct FInputActionValue& Value);
+	void HandleLook(const FInputActionValue& Value);
+	void HandleJump();
+	void HandleStopJumping();
 
 };

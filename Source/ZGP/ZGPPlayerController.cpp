@@ -52,7 +52,60 @@ void AZGPPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent))
+	{
+		// Move 바인딩
+		if (IA_Move)
+		{
+			EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AZGPPlayerController::HandleMove);
+		}
 
+		// Look 바인딩
+		if (IA_Look)
+		{
+			EnhancedInputComponent->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AZGPPlayerController::HandleLook);
+		}
+
+		// Jump 바인딩
+		if (IA_Jump)
+		{
+			EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Started, this, &AZGPPlayerController::HandleJump);
+			EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Completed, this, &AZGPPlayerController::HandleStopJumping);
+		}
+	}
 }
+
+void AZGPPlayerController::HandleMove(const FInputActionValue& Value)
+{
+	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
+	{
+		ControlledCharacter->Move(Value);
+	}
+}
+
+void AZGPPlayerController::HandleLook(const FInputActionValue& Value)
+{
+	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
+	{
+		ControlledCharacter->Look(Value);
+	}
+}
+
+void AZGPPlayerController::HandleJump()
+{
+	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
+	{
+		ControlledCharacter->Jump();
+	}
+}
+
+void AZGPPlayerController::HandleStopJumping()
+{
+	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
+	{
+		ControlledCharacter->StopJumping();
+	}
+}
+
 
 
