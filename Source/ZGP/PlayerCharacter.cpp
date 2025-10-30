@@ -76,22 +76,3 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-void APlayerCharacter::OnTagIn_Implementation()
-{
-	SetActorHiddenInGame(false);
-	SetActorEnableCollision(true);
-	SetActorTickEnabled(true);
-	GetCharacterMovement()->Activate();
-
-	UE_LOG(LogTemp, Warning, TEXT("%s Tagged In"), *GetName());
-}
-
-void APlayerCharacter::OnTagOut_Implementation()
-{
-	SetActorHiddenInGame(true);
-	SetActorEnableCollision(false);
-	SetActorTickEnabled(false);
-	GetCharacterMovement()->Deactivate();
-
-	UE_LOG(LogTemp, Warning, TEXT("%s Tagged Out"), *GetName());
-}

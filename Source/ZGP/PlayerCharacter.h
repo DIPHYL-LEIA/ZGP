@@ -4,19 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "BaseCharacter.h"
-#include "Taggable.h"
 #include "PlayerCharacter.generated.h"
 
 UCLASS()
-class ZGP_API APlayerCharacter : public ABaseCharacter, public ITaggable
+class ZGP_API APlayerCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
 
 public:
 	APlayerCharacter();
 
-	virtual void OnTagIn_Implementation() override;
-	virtual void OnTagOut_Implementation() override;
 
 	void Move(const struct FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
