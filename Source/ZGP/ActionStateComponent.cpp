@@ -44,5 +44,51 @@ bool UActionStateComponent::IsActionState(EActionState State) const
 bool UActionStateComponent::CanChangeActionState(EActionState NewState) const
 {
 	if (m_currentState == EActionState::DEAD) return false;
+
+	if (NewState == EActionState::ATTACKING)
+	{
+		switch (m_currentState)
+		{
+		case EActionState::IDLE:
+		case EActionState::WALKING:
+		case EActionState::RUNNING:
+			return true;
+		case EActionState::ATTACKING:
+			return true;
+		case EActionState::DODGING:
+		case EActionState::HIT:
+		case EActionState::DAZED:
+		default:
+			return false;
+		}
+	}
+
+	if (NewState == EActionState::DODGING)
+	{
+		switch (m_currentState)
+		{
+		case EActionState::IDLE:
+		case EActionState::WALKING:
+		case EActionState::RUNNING:
+		case EActionState::ATTACKING:
+			return true;
+		case EActionState::DODGING:
+		case EActionState::HIT:
+		case EActionState::DAZED:
+		default:
+			return false;
+		}
+	}
+
+	if (NewState == EActionState::HIT && NewState == EActionState::DAZED)
+	{
+		if (m_currentState == EActionState::DODGING)
+		{
+			// 회피 중(무적) 피격/그로기 상태 될 수 없음
+			return false;
+		}
+		return true;
+	}
+
 	return true;
 }

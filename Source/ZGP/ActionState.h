@@ -9,6 +9,8 @@ UENUM(BlueprintType)
 enum class EActionState : uint8
 {
 	IDLE		UMETA(DisplayName = "Idle"),
+	WALKING		UMETA(DisplayName = "Walking"),
+	RUNNING		UMETA(DisplayName = "Running"),
 	ATTACKING	UMETA(DisplayName = "Attacking"),
 	DODGING		UMETA(DisplayName = "Dodging"),
 	HIT			UMETA(DisplayName = "Hit"),
