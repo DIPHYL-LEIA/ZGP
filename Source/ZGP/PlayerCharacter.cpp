@@ -13,6 +13,9 @@
 #include "ZGPPlayerController.h"
 #include "InputAction.h"
 
+#include "ComboComponent.h"
+#include "SkillComponent.h"
+
 APlayerCharacter::APlayerCharacter()
 {
 	GetCapsuleComponent()->InitCapsuleSize(34.f, 88.f);
@@ -41,6 +44,20 @@ APlayerCharacter::APlayerCharacter()
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
+
+	// Combo Component
+	m_pComboComp = CreateDefaultSubobject<UComboComponent>(TEXT("ComboComponent"));
+}
+
+void APlayerCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// 두 컴포넌트의 델리게이트 바인딩
+	if (m_pComboComp && m_pSkillComponent)
+	{
+		m_pComboComp->OnPerformComboAttack.AddDynamic(m_pSkillComponent, &USkillComponent::ExecuteComboAttack);
+	}
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
@@ -71,8 +88,57 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void APlayerCharacter::RequestAttack()
+{
+	if (m_pComboComp)
+	{
+		m_pComboComp->RequestComboAttack();
+	}
+}
+
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
+
+bool APlayerCharacter::CanTagOut_Implementation() const
+{
+	// 젠존제에서 태그 가능/불가능한 시점 다시 알아보고 수정하기
+	if (IsActionState(EActionState::ATTACKING) || IsActionState(EActionState::HIT) ||
+		IsActionState(EActionState::DODGING) || IsActionState(EActionState::DEAD))
+	{
+		return false;
+	}
+	return true;
+}
+
+void APlayerCharacter::ExecuteTagIn_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation)
+{
+	UE_LOG(LogTemp, Log, TEXT("%s : Tag In"), *GetName());
+
+	SetActorLocation(TargetLocation);
+	SetActorRotation(TargetRotation);
+
+	// 컨트롤러 빙의 , 충돌 켜기
+	SetActorHiddenInGame(false);
+	SetActorEnableCollision(true);
+
+	// Tag In Montage
+	//PlayAnimMontage(TagInMontage);
+
+	// Tag In 하고 Idle 
+	SetActionState(EActionState::IDLE);
+}
+
+void APlayerCharacter::ExecuteTagOut_Implementation()
+{
+	UE_LOG(LogTemp, Log, TEXT("%s : Execute Tag Out "), *GetName());
+
+	// Tag Out Montage
+	//PlayAnimMontage(TagOutMontage);
+
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+}
+
 

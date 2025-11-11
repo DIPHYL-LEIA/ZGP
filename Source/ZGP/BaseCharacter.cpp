@@ -5,23 +5,61 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "StatsComponent.h"
+#include "ActionStateComponent.h"
+#include "SkillComponent.h"
 
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	StatsComp = CreateDefaultSubobject<UStatsComponent>(TEXT("StatsComponent"));
-
+	m_pActionStateComp = CreateDefaultSubobject<UActionStateComponent>(TEXT("ActionStateComponent"));
+	m_pSkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
 }
 
-// Called when the game starts or when spawned
+bool ABaseCharacter::CanChangeActionState(EActionState NewState) const
+{
+	if (m_pActionStateComp)
+	{
+		return m_pActionStateComp->CanChangeActionState(NewState);
+	}
+	return false;
+}
+
+void ABaseCharacter::SetActionState(EActionState NewState) const
+{
+	if (m_pActionStateComp)
+	{
+		m_pActionStateComp->SetActionState(NewState);
+	}
+}
+
+bool ABaseCharacter::IsActionState(EActionState State) const
+{
+	if (m_pActionStateComp)
+	{
+		return m_pActionStateComp->IsActionState(State);
+	}
+	return false;
+}
+
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (m_pSkillComponent)
+	{
+		m_pSkillComponent->OnRequestPlayMontage.AddDynamic(this, &ABaseCharacter::HandlePlayMontage);
+	}
+}
+
+void ABaseCharacter::HandlePlayMontage(UAnimMontage* MontagePlay)
+{
+	if (MontagePlay)
+	{
+		PlayAnimMontage(MontagePlay);
+	}
 }
 
 // Called every frame
@@ -36,5 +74,10 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+UActionStateComponent* ABaseCharacter::GetActionStateComponent() const
+{
+	return m_pActionStateComp;
 }
 

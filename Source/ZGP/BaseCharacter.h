@@ -4,33 +4,40 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "ActionStateProvider.h"
 #include "BaseCharacter.generated.h"
 
 UCLASS()
-class ZGP_API ABaseCharacter : public ACharacter
+class ZGP_API ABaseCharacter : public ACharacter, public IActionStateProvider
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	ABaseCharacter();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	virtual bool CanChangeActionState(EActionState NewState) const override;
+	virtual void SetActionState(EActionState NewState) const override;
+	virtual bool IsActionState(EActionState State) const override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	TObjectPtr<class UStatsComponent> StatsComp;
+protected:
+	virtual void BeginPlay() override;
 
 	/// <summary>
 	/// 컴포넌트 추가
 	/// </summary>
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UActionStateComponent> m_pActionStateComp;
 
-public:	
-	// Called every frame
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class USkillComponent> m_pSkillComponent;
+
+	UFUNCTION()
+	void HandlePlayMontage(UAnimMontage* MontagePlay);
+
+public:
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UActionStateComponent* GetActionStateComponent() const;
 };
