@@ -18,9 +18,13 @@ void USkillComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
 
-	if (m_pSkillDataTable == nullptr || m_pComboDataTable == nullptr)
+	if (m_pSkillDataTable == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("SkillCompontne::InitializeComp - NO DataTable"));
+		UE_LOG(LogTemp, Error, TEXT("SkillComponent::InitializeComp - NO Skill DataTable"));
+	}
+	if (m_pComboDataTable == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("SkillComponent::InitializeComp - NO Combo DataTable"));
 	}
 
 }

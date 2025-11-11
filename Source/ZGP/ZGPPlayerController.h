@@ -20,6 +20,11 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	// Components
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<class USquadManagerComponent> m_pSquadManagerComp;
+
+	// Input
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<class UInputMappingContext> IMC_Default = nullptr;
 
@@ -31,7 +36,17 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> IA_Jump;
-	
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> IA_Attack;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> IA_Tag;
+
+	// Tag
+	UPROPERTY(EditDefaultsOnly, Category = "Tag")
+	TArray<TSubclassOf<class APlayerCharacter>> m_arTagCharacter;
+
 protected:
 	// (선택)입력 매핑 우선 순위 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -41,5 +56,8 @@ protected:
 	void HandleLook(const FInputActionValue& Value);
 	void HandleJump();
 	void HandleStopJumping();
+
+	void HandleAttack();
+	void HandleTag();
 
 };

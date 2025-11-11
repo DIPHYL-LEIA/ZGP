@@ -10,8 +10,17 @@
 #include "InputMappingContext.h"
 #include "InputAction.h"
 
+#include "SquadManagerComponent.h"
+#include "Taggable.h"
+
+#include "GameFramework/GameModeBase.h"
+
 AZGPPlayerController::AZGPPlayerController()
 {
+	// Components
+	m_pSquadManagerComp = CreateDefaultSubobject<USquadManagerComponent>(TEXT("SquadManagerComponent"));
+
+	// Input Context
 	static ConstructorHelpers::FObjectFinder<UInputAction> MoveActionAsset(TEXT("/Game/ZGProject/ZGPInput/ia-move.ia-move"));
 	if (MoveActionAsset.Succeeded())
 	{
@@ -28,6 +37,19 @@ AZGPPlayerController::AZGPPlayerController()
 		IA_Jump = JumpActionAsset.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UInputAction> AttackActionAsset(TEXT("/Game/ZGProject/ZGPInput/ia-attack.ia-attack"));
+	if (AttackActionAsset.Succeeded())
+	{
+		IA_Attack = AttackActionAsset.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> TagActionAsset(TEXT("/Game/ZGProject/ZGPInput/ia-tag.ia-tag"));
+	if (TagActionAsset.Succeeded())
+	{
+		IA_Tag = TagActionAsset.Object;
+	}
+
+	// Input Mapping Context
 	static ConstructorHelpers::FObjectFinder<UInputMappingContext> DefaultMappingContextAsset(TEXT("/Game/ZGProject/ZGPInput/imc-default.imc-default"));
 	if (DefaultMappingContextAsset.Succeeded())
 	{
@@ -44,6 +66,63 @@ void AZGPPlayerController::BeginPlay()
 		if (IMC_Default)
 		{
 			Subsystem->AddMappingContext(IMC_Default, DefaultInputMappingPriority);
+		}
+	}
+
+	if (m_pSquadManagerComp == nullptr) return;
+
+	if (m_pSquadManagerComp && m_arTagCharacter.Num() > 0)
+	{
+
+		APlayerCharacter* FirstCharacter = nullptr;
+		FVector CharacterLocation = FVector::ZeroVector;
+		FRotator CharacterRotation = FRotator::ZeroRotator;
+
+		// Player Start 위치 
+		if (AGameModeBase* GameMode = GetWorld()->GetAuthGameMode())
+		{
+			AActor* PlayerStart = GameMode->FindPlayerStart(this);
+			if (PlayerStart)
+			{
+				CharacterLocation = PlayerStart->GetActorLocation();
+				CharacterRotation = PlayerStart->GetActorRotation();
+			}
+		}
+
+		if (GetPawn())
+		{
+			GetPawn()->Destroy();
+		}
+
+		for (int i = 0; i < m_arTagCharacter.Num(); ++i)
+		{
+			UE_LOG(LogTemp, Log, TEXT("--- [PC::BeginPlay] (INDEX: %d) ---"), i);
+
+			if (m_arTagCharacter[i])
+			{
+				APlayerCharacter* NewCharacter = GetWorld()->SpawnActor<APlayerCharacter>(m_arTagCharacter[i], CharacterLocation, CharacterRotation); //
+
+				if (NewCharacter)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("--- [PC::BeginPlay] SUCCESS: %s ---"), *NewCharacter->GetName());
+
+					m_pSquadManagerComp->RegisterCharacter(NewCharacter);
+
+					if (i == 0)
+					{
+						FirstCharacter = NewCharacter;
+						Possess(FirstCharacter);
+						UE_LOG(LogTemp, Warning, TEXT("--- [PC::BeginPlay] ... %s Possess. ---"), *FirstCharacter->GetName());
+
+						m_pSquadManagerComp->InitActiveCharacter(FirstCharacter);
+					}
+					else
+					{
+						ITaggable::Execute_ExecuteTagOut(NewCharacter);
+						UE_LOG(LogTemp, Log, TEXT("--- [PC::BeginPlay] ... %s TagOut ---"), *NewCharacter->GetName());
+					}
+				}
+			}
 		}
 	}
 }
@@ -71,6 +150,18 @@ void AZGPPlayerController::SetupInputComponent()
 		{
 			EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Started, this, &AZGPPlayerController::HandleJump);
 			EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Completed, this, &AZGPPlayerController::HandleStopJumping);
+		}
+
+		// Attack 바인딩
+		if (IA_Attack)
+		{
+			EnhancedInputComponent->BindAction(IA_Attack, ETriggerEvent::Started, this, &AZGPPlayerController::HandleAttack);
+		}
+
+		// Tag 바인딩
+		if (IA_Tag)
+		{
+			EnhancedInputComponent->BindAction(IA_Tag, ETriggerEvent::Started, this, &AZGPPlayerController::HandleTag);
 		}
 	}
 }
@@ -104,6 +195,27 @@ void AZGPPlayerController::HandleStopJumping()
 	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
 	{
 		ControlledCharacter->StopJumping();
+	}
+}
+
+void AZGPPlayerController::HandleAttack()
+{
+	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
+	{
+		ControlledCharacter->RequestAttack();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("PlayerController : GetPawn<PlayerCharacter> is NULL"));
+	}
+
+}
+
+void AZGPPlayerController::HandleTag()
+{
+	if (m_pSquadManagerComp)
+	{
+		m_pSquadManagerComp->RequestTag();
 	}
 }
 
