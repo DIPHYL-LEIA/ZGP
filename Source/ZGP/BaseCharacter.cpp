@@ -7,6 +7,8 @@
 #include "StatsComponent.h"
 #include "ActionStateComponent.h"
 #include "SkillComponent.h"
+#include "HealthComponent.h"
+#include "AttributeAnomalyComponent.h"
 
 
 // Sets default values
@@ -16,6 +18,8 @@ ABaseCharacter::ABaseCharacter()
 
 	m_pActionStateComp = CreateDefaultSubobject<UActionStateComponent>(TEXT("ActionStateComponent"));
 	m_pSkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
+	m_pHealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+	m_pAttributeAnomalyComponent = CreateDefaultSubobject<UAttributeAnomalyComponent>(TEXT("AttributeAnomalyComponent"));
 }
 
 bool ABaseCharacter::CanChangeActionState(EActionState NewState) const
@@ -42,6 +46,15 @@ bool ABaseCharacter::IsActionState(EActionState State) const
 		return m_pActionStateComp->IsActionState(State);
 	}
 	return false;
+}
+
+void ABaseCharacter::ApplyDamage_Implementation(const FDamageData& DamageData)
+{
+	if (m_pHealthComponent)
+	{
+		AActor* Character = DamageData.Attacker.Get();
+		m_pHealthComponent->TakeDamage(DamageData.BaseDamageValue, Character);
+	}
 }
 
 void ABaseCharacter::BeginPlay()
@@ -79,5 +92,15 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 UActionStateComponent* ABaseCharacter::GetActionStateComponent() const
 {
 	return m_pActionStateComp;
+}
+
+UHealthComponent* ABaseCharacter::GetHealthComponent() const
+{
+	return m_pHealthComponent;
+}
+
+UAttributeAnomalyComponent* ABaseCharacter::GetAttributeAnomalyComponent() const
+{
+	return m_pAttributeAnomalyComponent;
 }
 

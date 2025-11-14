@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "ActionStateProvider.h"
+#include "Damageable.h"
 #include "BaseCharacter.generated.h"
 
 UCLASS()
-class ZGP_API ABaseCharacter : public ACharacter, public IActionStateProvider
+class ZGP_API ABaseCharacter : public ACharacter, public IActionStateProvider, public IDamageable
 {
 	GENERATED_BODY()
 
@@ -18,6 +19,8 @@ public:
 	virtual bool CanChangeActionState(EActionState NewState) const override;
 	virtual void SetActionState(EActionState NewState) const override;
 	virtual bool IsActionState(EActionState State) const override;
+
+	virtual void ApplyDamage_Implementation(const FDamageData& DamageData) override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -31,6 +34,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class USkillComponent> m_pSkillComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UHealthComponent> m_pHealthComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAttributeAnomalyComponent> m_pAttributeAnomalyComponent;
+
+
+
 	UFUNCTION()
 	void HandlePlayMontage(UAnimMontage* MontagePlay);
 
@@ -40,4 +51,6 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UActionStateComponent* GetActionStateComponent() const;
+	UHealthComponent* GetHealthComponent() const;
+	UAttributeAnomalyComponent* GetAttributeAnomalyComponent() const;
 };
