@@ -25,7 +25,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void ApplyDamage_Implementation(const FDamageData& DamageData) override;
+	virtual void ApplyCombatEffect_Implementation(const FDamageData& DamageData) override;
 
 	UFUNCTION()
 	void HandleDaze();

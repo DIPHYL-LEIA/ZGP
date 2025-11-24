@@ -3,6 +3,13 @@
 
 #include "EnemyCharacter.h"
 #include "EnemyDazeComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+
+#include "EnemyAIController.h"
+#include "AIController.h"
+
 #include "HealthComponent.h"
 #include "ActionStateProvider.h"
 #include "ActionState.h"
@@ -10,6 +17,22 @@
 AEnemyCharacter::AEnemyCharacter()
 {
 	m_pEnemyDazeComponent = CreateDefaultSubobject<UEnemyDazeComponent>(TEXT("EnemyDazeComponent"));
+
+	// Capsule Collision 
+	GetCapsuleComponent()->InitCapsuleSize(35.f, 90.f);
+
+	// Mesh
+	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
+	GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
+
+	// Controller Rotation
+	bUseControllerRotationRoll = false;
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = false;
+
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
+
 }
 
 UEnemyDazeComponent* AEnemyCharacter::GetDazeComponent() const
@@ -35,23 +58,14 @@ void AEnemyCharacter::BeginPlay()
 	}
 }
 
-void AEnemyCharacter::ApplyDamage_Implementation(const FDamageData& DamageData)
+void AEnemyCharacter::ApplyCombatEffect_Implementation(const FDamageData& DamageData)
 {
-	// 1. 체력
-	if (m_pHealthComponent)
-	{
-		AActor* Character = DamageData.Attacker.Get();
-		m_pHealthComponent->TakeDamage(DamageData.BaseDamageValue, Character);
-	}
+	Super::ApplyCombatEffect_Implementation(DamageData);
 
-	// 2. 속성 이상
-	if (m_pAttributeAnomalyComponent)
-	{
-	}
-
-	// 3. Daze
+	// Daze
 	if (m_pEnemyDazeComponent)
 	{
+		m_pEnemyDazeComponent->TakeDaze(DamageData.DazeValue);
 	}
 }
 

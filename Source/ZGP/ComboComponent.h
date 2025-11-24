@@ -17,13 +17,13 @@ class ZGP_API UComboComponent : public UActorComponent
 	GENERATED_BODY()
 
 protected:
-	UPROPERTY(VisibleInstanceOnly, Category = "Combo", meta = (AllowPrivateAccesss = "true"))
+	UPROPERTY(VisibleInstanceOnly, Category = "Combo", meta = (AllowPrivateAccess = "true"))
 	int32 m_nCurrentComboStep;
 
-	UPROPERTY(VisibleInstanceOnly, Category = "Combo", meta = (AllowPrivateAccesss = "true"))
+	UPROPERTY(VisibleInstanceOnly, Category = "Combo", meta = (AllowPrivateAccess = "true"))
 	bool m_bIsComboWindowStart;
 
-	UPROPERTY(VisibleInstanceOnly, Category = "Combo", meta = (AllowPrivateAccesss = "true"))
+	UPROPERTY(VisibleInstanceOnly, Category = "Combo", meta = (AllowPrivateAccess = "true"))
 	float m_fComboResetTime;
 
 	FTimerHandle ComboResetTimer;
