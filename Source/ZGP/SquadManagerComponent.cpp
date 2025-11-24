@@ -28,10 +28,6 @@ void USquadManagerComponent::RegisterCharacter(APawn* Character)
 	{
 		m_arSquadCharacter.Add(Character);
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[SquadManagerComp] : FAILED"));
-	}
 }
 
 void USquadManagerComponent::RequestTag()
@@ -47,7 +43,7 @@ void USquadManagerComponent::RequestTag()
 	if (m_pActiveCharacter == nullptr || StandbyCharacter == nullptr) return;
 
 	// C++에서 인터페이스 호출할 때 'Execute_함수명'
-	if (ITaggable::Execute_CanTagOut(m_pActiveCharacter))
+	if (ITaggable::Execute_CanTag(m_pActiveCharacter))
 	{
 		DoTag(StandbyCharacter, m_pActiveCharacter);
 		m_pActiveCharacter = StandbyCharacter;
@@ -67,16 +63,62 @@ void USquadManagerComponent::BeginPlay()
 
 void USquadManagerComponent::DoTag(APawn* InCharacter, APawn* OutCharacter)
 {
-	const FVector Location = OutCharacter->GetActorLocation();
-	const FRotator Rotation = OutCharacter->GetActorRotation();
+	FVector TargetLocation;
+	FRotator TargetRotation;
 
-	ITaggable::Execute_ExecuteTagOut(OutCharacter);
-	ITaggable::Execute_ExecuteTagIn(InCharacter, Location, Rotation);
+	CalculateTagSpawnTransform(OutCharacter, TargetLocation, TargetRotation);
+
+	ITaggable::Execute_OnTagOut(OutCharacter);
+	ITaggable::Execute_OnTagIn(InCharacter, TargetLocation, TargetRotation);
 
 	// Player Controller에 Possess
 	if (APlayerController* PC = Cast<APlayerController>(GetOwner()))
 	{
+		const FRotator CameraRotation = PC->GetControlRotation();
+
 		PC->Possess(InCharacter);
+		PC->SetControlRotation(CameraRotation);
 	}
+}
+
+void USquadManagerComponent::CalculateTagSpawnTransform(const APawn* BaseCharacter, FVector& OutLocation, FRotator& OutRotation) const
+{
+	if (!BaseCharacter) return;
+
+	const FVector BaseLocation = BaseCharacter->GetActorLocation();
+	const FRotator BaseRotation = BaseCharacter->GetActorRotation();
+
+	// 로컬 좌표 -> 월드 좌표계 변환
+	const FVector RightVector = FRotationMatrix(BaseRotation).GetScaledAxis(EAxis::Y);
+	const FVector ForwardVector = FRotationMatrix(BaseRotation).GetScaledAxis(EAxis::X);
+
+	// 오프셋
+	FVector Offset = (RightVector * m_fTagSpawnSideOffset) + (ForwardVector * (-m_fTagSpawnDistance));
+
+	// 최종 목표 위치
+	FVector TargetLocation = BaseLocation + Offset;
+
+	// 벽 뚫기 방지
+	FVector ValidLocation;
+	if (ValidTagSpawnLocation(TargetLocation, ValidLocation))
+	{
+		OutLocation = ValidLocation;
+	}
+	else
+	{
+		// 위치가 벽이면 원래 캐릭터 위치 사용
+		OutLocation = BaseLocation;
+	}
+
+	// 회전은 현재 캐릭터와 동일
+	OutRotation = BaseRotation;
+
+}
+
+bool USquadManagerComponent::ValidTagSpawnLocation(const FVector& Location, FVector& ValidLocation) const
+{
+	// 충돌 검사 필요
+	ValidLocation = Location;
+	return true;
 }
 

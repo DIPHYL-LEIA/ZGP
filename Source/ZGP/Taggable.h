@@ -19,12 +19,12 @@ class ZGP_API ITaggable
 public:
 	// ex) 피격, 스킬 시전 중이 아닐 때 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Tag")
-	bool CanTagOut() const;
+	bool CanTag() const;
 	// ex) 이펙트 재생, 액터 숨길 때 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Tag")
-	void ExecuteTagIn(const FVector& TargetLocation, const FRotator& TargetRotation);
+	void OnTagIn(const FVector& TargetLocation, const FRotator& TargetRotation);
 	// ex) 지정된 위치에 태그, 이펙트 재생, 액터 나타날 때 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Tag")
-	void ExecuteTagOut();
+	void OnTagOut();
 
 };

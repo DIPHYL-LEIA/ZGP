@@ -30,4 +30,14 @@ protected:
 
 	void DoTag(APawn* InCharacter, APawn* OutCharacter);
 
+private:
+	void CalculateTagSpawnTransform(const APawn* BaseCharacter, FVector& OutLocation, FRotator& OutRotation) const;
+	bool ValidTagSpawnLocation(const FVector& Location, FVector& ValidLocation) const;
+
+	// 캐릭터 앞 나올 위치 지정
+	UPROPERTY(EditDefaultsOnly, Category = "Tag")
+	float m_fTagSpawnDistance = 150.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tag")
+	float m_fTagSpawnSideOffset = 45.f;
 };
