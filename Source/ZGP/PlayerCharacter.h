@@ -24,9 +24,9 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	// Tag
-	virtual bool CanTagOut_Implementation() const override;
-	virtual void ExecuteTagIn_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation) override;
-	virtual void ExecuteTagOut_Implementation() override;
+	virtual bool CanTag_Implementation() const override;
+	virtual void OnTagIn_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation) override;
+	virtual void OnTagOut_Implementation() override;
 
 protected:
 	virtual void BeginPlay() override;

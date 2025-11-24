@@ -4,11 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "TargetProvider.h"
 #include "ZGPPlayerController.generated.h"
 
 
 UCLASS()
-class ZGP_API AZGPPlayerController : public APlayerController
+class ZGP_API AZGPPlayerController : public APlayerController, public ITargetProvider
 {
 	GENERATED_BODY()
 
@@ -17,12 +18,18 @@ public:
 
 	virtual void SetupInputComponent() override;
 
+	virtual AActor* GetCurrentTargetActor_Implementation() const override;
+	virtual void SetCurrentTargetActor_Implementation(AActor* NewTarget) override;
+
 protected:
 	virtual void BeginPlay() override;
 
 	// Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	TObjectPtr<class USquadManagerComponent> m_pSquadManagerComp;
+	TObjectPtr<class USquadManagerComponent> m_pSquadManagerComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<class UTargetingComponent> m_pTargetingComponent;
 
 	// Input
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")

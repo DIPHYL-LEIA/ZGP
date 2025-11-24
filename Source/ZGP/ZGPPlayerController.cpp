@@ -11,6 +11,7 @@
 #include "InputAction.h"
 
 #include "SquadManagerComponent.h"
+#include "TargetingComponent.h"
 #include "Taggable.h"
 
 #include "GameFramework/GameModeBase.h"
@@ -18,7 +19,8 @@
 AZGPPlayerController::AZGPPlayerController()
 {
 	// Components
-	m_pSquadManagerComp = CreateDefaultSubobject<USquadManagerComponent>(TEXT("SquadManagerComponent"));
+	m_pSquadManagerComponent = CreateDefaultSubobject<USquadManagerComponent>(TEXT("SquadManagerComponent"));
+	m_pTargetingComponent = CreateDefaultSubobject<UTargetingComponent>(TEXT("TargetingComponent"));
 
 	// Input Context
 	static ConstructorHelpers::FObjectFinder<UInputAction> MoveActionAsset(TEXT("/Game/ZGProject/ZGPInput/ia-move.ia-move"));
@@ -69,9 +71,9 @@ void AZGPPlayerController::BeginPlay()
 		}
 	}
 
-	if (m_pSquadManagerComp == nullptr) return;
+	if (m_pSquadManagerComponent == nullptr) return;
 
-	if (m_pSquadManagerComp && m_arTagCharacter.Num() > 0)
+	if (m_pSquadManagerComponent && m_arTagCharacter.Num() > 0)
 	{
 
 		APlayerCharacter* FirstCharacter = nullptr;
@@ -96,30 +98,24 @@ void AZGPPlayerController::BeginPlay()
 
 		for (int i = 0; i < m_arTagCharacter.Num(); ++i)
 		{
-			UE_LOG(LogTemp, Log, TEXT("--- [PC::BeginPlay] (INDEX: %d) ---"), i);
-
 			if (m_arTagCharacter[i])
 			{
 				APlayerCharacter* NewCharacter = GetWorld()->SpawnActor<APlayerCharacter>(m_arTagCharacter[i], CharacterLocation, CharacterRotation); //
 
 				if (NewCharacter)
 				{
-					UE_LOG(LogTemp, Warning, TEXT("--- [PC::BeginPlay] SUCCESS: %s ---"), *NewCharacter->GetName());
-
-					m_pSquadManagerComp->RegisterCharacter(NewCharacter);
+					m_pSquadManagerComponent->RegisterCharacter(NewCharacter);
 
 					if (i == 0)
 					{
 						FirstCharacter = NewCharacter;
 						Possess(FirstCharacter);
-						UE_LOG(LogTemp, Warning, TEXT("--- [PC::BeginPlay] ... %s Possess. ---"), *FirstCharacter->GetName());
 
-						m_pSquadManagerComp->InitActiveCharacter(FirstCharacter);
+						m_pSquadManagerComponent->InitActiveCharacter(FirstCharacter);
 					}
 					else
 					{
-						ITaggable::Execute_ExecuteTagOut(NewCharacter);
-						UE_LOG(LogTemp, Log, TEXT("--- [PC::BeginPlay] ... %s TagOut ---"), *NewCharacter->GetName());
+						ITaggable::Execute_OnTagOut(NewCharacter);
 					}
 				}
 			}
@@ -163,6 +159,23 @@ void AZGPPlayerController::SetupInputComponent()
 		{
 			EnhancedInputComponent->BindAction(IA_Tag, ETriggerEvent::Started, this, &AZGPPlayerController::HandleTag);
 		}
+	}
+}
+
+AActor* AZGPPlayerController::GetCurrentTargetActor_Implementation() const
+{
+	if (m_pTargetingComponent)
+	{
+		return m_pTargetingComponent->GetCurrentTarget();
+	}
+	return nullptr;
+}
+
+void AZGPPlayerController::SetCurrentTargetActor_Implementation(AActor* NewTarget)
+{
+	if (m_pTargetingComponent)
+	{
+		m_pTargetingComponent->SetCurrentTarget(NewTarget);
 	}
 }
 
@@ -213,9 +226,9 @@ void AZGPPlayerController::HandleAttack()
 
 void AZGPPlayerController::HandleTag()
 {
-	if (m_pSquadManagerComp)
+	if (m_pSquadManagerComponent)
 	{
-		m_pSquadManagerComp->RequestTag();
+		m_pSquadManagerComponent->RequestTag();
 	}
 }
 

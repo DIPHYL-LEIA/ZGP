@@ -16,45 +16,10 @@ ABaseCharacter::ABaseCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	m_pActionStateComp = CreateDefaultSubobject<UActionStateComponent>(TEXT("ActionStateComponent"));
+	m_pActionStateComponent = CreateDefaultSubobject<UActionStateComponent>(TEXT("ActionStateComponent"));
 	m_pSkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
 	m_pHealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	m_pAttributeAnomalyComponent = CreateDefaultSubobject<UAttributeAnomalyComponent>(TEXT("AttributeAnomalyComponent"));
-}
-
-bool ABaseCharacter::CanChangeActionState(EActionState NewState) const
-{
-	if (m_pActionStateComp)
-	{
-		return m_pActionStateComp->CanChangeActionState(NewState);
-	}
-	return false;
-}
-
-void ABaseCharacter::SetActionState(EActionState NewState) const
-{
-	if (m_pActionStateComp)
-	{
-		m_pActionStateComp->SetActionState(NewState);
-	}
-}
-
-bool ABaseCharacter::IsActionState(EActionState State) const
-{
-	if (m_pActionStateComp)
-	{
-		return m_pActionStateComp->IsActionState(State);
-	}
-	return false;
-}
-
-void ABaseCharacter::ApplyDamage_Implementation(const FDamageData& DamageData)
-{
-	if (m_pHealthComponent)
-	{
-		AActor* Character = DamageData.Attacker.Get();
-		m_pHealthComponent->TakeDamage(DamageData.BaseDamageValue, Character);
-	}
 }
 
 void ABaseCharacter::BeginPlay()
@@ -67,11 +32,37 @@ void ABaseCharacter::BeginPlay()
 	}
 }
 
+
 void ABaseCharacter::HandlePlayMontage(UAnimMontage* MontagePlay)
 {
-	if (MontagePlay)
+	if (MontagePlay && GetMesh() && GetMesh()->GetAnimInstance())
 	{
-		PlayAnimMontage(MontagePlay);
+		const float Duration = PlayAnimMontage(MontagePlay);
+
+		if (Duration > 0.f)
+		{
+			UAnimInstance* AnimInst = GetMesh()->GetAnimInstance();
+			AnimInst->OnMontageEnded.RemoveDynamic(this, &ABaseCharacter::HandleMontageEnded);
+			AnimInst->OnMontageEnded.AddDynamic(this, &ABaseCharacter::HandleMontageEnded);
+		}
+	}
+}
+
+void ABaseCharacter::HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (GetMesh() && GetMesh()->GetAnimInstance())
+	{
+		GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &ABaseCharacter::HandleMontageEnded);
+	}
+
+	if (bInterrupted) return;
+
+	if (m_pActionStateComponent && m_pActionStateComponent->IsTemporaryState())
+	{
+		if (IsActionState(EActionState::DEAD) == false)
+		{
+			SetActionState(EActionState::IDLE);
+		}
 	}
 }
 
@@ -89,9 +80,64 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 }
 
+
+bool ABaseCharacter::CanChangeActionState(EActionState NewState) const
+{
+	if (m_pActionStateComponent)
+	{
+		return m_pActionStateComponent->CanChangeActionState(NewState);
+	}
+	return false;
+}
+
+void ABaseCharacter::SetActionState(EActionState NewState) const
+{
+	if (m_pActionStateComponent)
+	{
+		m_pActionStateComponent->SetActionState(NewState);
+	}
+}
+
+bool ABaseCharacter::IsActionState(EActionState State) const
+{
+	if (m_pActionStateComponent)
+	{
+		return m_pActionStateComponent->IsActionState(State);
+	}
+	return false;
+}
+
+void ABaseCharacter::ApplyCombatEffect_Implementation(const FDamageData& DamageData)
+{
+	if (m_pHealthComponent)
+	{
+		m_pHealthComponent->TakeDamage(DamageData.BaseDamageValue, DamageData.Attacker.Get());
+	}
+
+	if (m_pAttributeAnomalyComponent && DamageData.AnomalyType != EAttributeType::NONE)
+	{
+		m_pAttributeAnomalyComponent->TakeAnomalyDamage(DamageData.AnomalyValue, DamageData.AnomalyType);
+	}
+
+	if (CanChangeActionState(EActionState::HIT))
+	{
+		SetActionState(EActionState::HIT);
+	}
+}
+
+bool ABaseCharacter::CanParry_Implementation() const
+{
+	return false;
+}
+
+void ABaseCharacter::Parried_Implementation(AActor* Character)
+{
+}
+
+
 UActionStateComponent* ABaseCharacter::GetActionStateComponent() const
 {
-	return m_pActionStateComp;
+	return m_pActionStateComponent;
 }
 
 UHealthComponent* ABaseCharacter::GetHealthComponent() const

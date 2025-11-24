@@ -101,7 +101,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-bool APlayerCharacter::CanTagOut_Implementation() const
+bool APlayerCharacter::CanTag_Implementation() const
 {
 	// 젠존제에서 태그 가능/불가능한 시점 다시 알아보고 수정하기
 	if (IsActionState(EActionState::ATTACKING) || IsActionState(EActionState::HIT) ||
@@ -112,7 +112,7 @@ bool APlayerCharacter::CanTagOut_Implementation() const
 	return true;
 }
 
-void APlayerCharacter::ExecuteTagIn_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation)
+void APlayerCharacter::OnTagIn_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation)
 {
 	UE_LOG(LogTemp, Log, TEXT("%s : Tag In"), *GetName());
 
@@ -130,7 +130,7 @@ void APlayerCharacter::ExecuteTagIn_Implementation(const FVector& TargetLocation
 	SetActionState(EActionState::IDLE);
 }
 
-void APlayerCharacter::ExecuteTagOut_Implementation()
+void APlayerCharacter::OnTagOut_Implementation()
 {
 	UE_LOG(LogTemp, Log, TEXT("%s : Execute Tag Out "), *GetName());
 
