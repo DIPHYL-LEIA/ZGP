@@ -45,50 +45,63 @@ bool UActionStateComponent::CanChangeActionState(EActionState NewState) const
 {
 	if (m_currentState == EActionState::DEAD) return false;
 
-	if (NewState == EActionState::ATTACKING)
+	// 같은 상태로의 변화는 막되 공격은 허용
+	if (m_currentState == NewState)
 	{
-		switch (m_currentState)
-		{
-		case EActionState::IDLE:
-		case EActionState::WALKING:
-		case EActionState::RUNNING:
+		if (NewState == EActionState::ATTACKING)
 			return true;
-		case EActionState::ATTACKING:
-			return true;
-		case EActionState::DODGING:
-		case EActionState::HIT:
-		case EActionState::DAZED:
-		default:
-			return false;
-		}
+		return false;
 	}
 
-	if (NewState == EActionState::DODGING)
-	{
-		switch (m_currentState)
-		{
-		case EActionState::IDLE:
-		case EActionState::WALKING:
-		case EActionState::RUNNING:
-		case EActionState::ATTACKING:
-			return true;
-		case EActionState::DODGING:
-		case EActionState::HIT:
-		case EActionState::DAZED:
-		default:
-			return false;
-		}
-	}
+	int32 CurrentPriority = GetStatePriority(m_currentState);
+	int32 NewPriority = GetStatePriority(NewState);
 
-	if (NewState == EActionState::HIT && NewState == EActionState::DAZED)
+	if (NewPriority > CurrentPriority) return true;
+
+	// 예외)
+	// 공격 중 회피 캔슬 허용
+	if (m_currentState == EActionState::ATTACKING && NewState == EActionState::DODGING)
 	{
-		if (m_currentState == EActionState::DODGING)
-		{
-			// 회피 중(무적) 피격/그로기 상태 될 수 없음
-			return false;
-		}
 		return true;
 	}
 
-	return true;
+	return false;
+}
+
+int32 UActionStateComponent::GetStatePriority(EActionState State) const
+{
+	switch (State)
+	{
+	case EActionState::DEAD:
+		return 100;
+	case EActionState::DAZED:
+		return 90;
+	case EActionState::HIT:
+		return 80;
+	case EActionState::DODGING:
+		return 70;
+	case EActionState::ATTACKING:
+		return 50;
+	case EActionState::RUNNING:
+		return 10;
+	case EActionState::WALKING:
+		return 10;
+	case EActionState::IDLE:
+		return 0;
+	default:
+		return 0;
+	}
+}
+
+bool UActionStateComponent::IsTemporaryState() const
+{
+	switch (m_currentState)
+	{
+	case EActionState::ATTACKING:
+	case EActionState::DODGING:
+	case EActionState::HIT:
+		return true;
+	default:
+		return false;
+	}
 }

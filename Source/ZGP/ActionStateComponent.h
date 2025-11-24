@@ -9,12 +9,12 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnActionStateChanged, EActionState, OldState, EActionState, NewState);
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class ZGP_API UActionStateComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	UActionStateComponent();
 
 	// 컴포넌트 초기화 시 호출
@@ -32,6 +32,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "ActionState")
 	bool CanChangeActionState(EActionState NewState) const;
 
+	UFUNCTION(BlueprintPure, Category = "ActionState")
+	bool IsTemporaryState() const;
+
 	UPROPERTY(BlueprintAssignable, Category = "ActionState")
 	FOnActionStateChanged OnStateChanged;
 
@@ -44,4 +47,9 @@ protected:
 	//void OnRep_CurrentState(EActionState OldState);
 
 	//virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+private:
+	UFUNCTION(BlueprintPure, Category = "ActionState")
+	int32 GetStatePriority(EActionState State) const;
+
 };
