@@ -173,10 +173,10 @@ AActor* AZGPPlayerController::GetCurrentTargetActor_Implementation() const
 
 void AZGPPlayerController::SetCurrentTargetActor_Implementation(AActor* NewTarget)
 {
-	if (m_pTargetingComponent)
-	{
-		m_pTargetingComponent->SetCurrentTarget(NewTarget);
-	}
+	//if (m_pTargetingComponent)
+	//{
+	//	m_pTargetingComponent->SetCurrentTarget(NewTarget);
+	//}
 }
 
 void AZGPPlayerController::HandleMove(const FInputActionValue& Value)

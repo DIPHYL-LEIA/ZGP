@@ -3,7 +3,6 @@
 
 #include "TargetingComponent.h"
 #include "Targetable.h"
-#include "GameFramework/Actor.h"
 #include "Engine/World.h"
 #include "Engine/OverlapResult.h"
 #include "DrawDebugHelpers.h"
@@ -11,98 +10,82 @@
 UTargetingComponent::UTargetingComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-	m_bIsLockOn = false;
 }
 
-void UTargetingComponent::BeginPlay()
+void UTargetingComponent::UpdateTargeting(float DeltaTime, const FVector& Location, const FVector& Forward, AActor* IgnoreActor)
 {
-	Super::BeginPlay();
-}
-
-void UTargetingComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-}
-
-void UTargetingComponent::UpdateTargeting(const FVector& Location, const FVector& Forward, AActor* IgnoreActor)
-{
-	// 락온 체크
-	if (m_bIsLockOn)
+	//	1. 기본 검사
+	if (m_pCurrentTarget.IsValid())
 	{
-		if (m_pCurrentTarget.IsValid())
+		float DistanceSquared = FVector::DistSquared(Location, m_pCurrentTarget->GetActorLocation());
+		float MaxDistanceSquared = m_fSearchRadius * m_fSearchRadius * m_fHardLockRelease;
+
+		// 거리 멀어졌을 때
+		if (DistanceSquared > MaxDistanceSquared)
 		{
-			if (m_pCurrentTarget->Implements<UTargetable>() && !ITargetable::Execute_IsTargetable(m_pCurrentTarget.Get()))
+			ChangeTarget(nullptr);
+
+			if (m_eTargetingMode == ETargetingMode::HARD_LOCK)
 			{
-				ToggleLockOn();
-			}
-			else
-			{
-				float DistanceSquared = FVector::DistSquared(Location, m_pCurrentTarget->GetActorLocation());
-				if (DistanceSquared > (m_fSearchRadius * m_fSearchRadius) * 1.5f)
-				{
-					ToggleLockOn();
-					ChangeTarget(nullptr);
-				}
+				m_eTargetingMode = ETargetingMode::SOFT_LOCK;
+				m_fLostTargetTimer = 0.f;
 			}
 		}
-		else
+	}
+	else
+	{
+		// Hard Lock 대상 죽음
+		if (m_eTargetingMode == ETargetingMode::HARD_LOCK)
 		{
-			ToggleLockOn();
-		}
-		return;		// 락온 중에는 새 타겟 찾지 않음
-	}
-
-
-	// 타겟 탐색
-	UWorld* World = GetWorld();
-	if (!World) return;
-
-	TArray<FOverlapResult> OverlapResults;
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(GetOwner());		// 컨트롤러 제외
-	if (IgnoreActor)
-	{
-		QueryParams.AddIgnoredActor(IgnoreActor);	// 내 캐릭터 제외
-	}
-
-	// 오버랩 성능 최적화 필요
-	bool bInteraction = World->OverlapMultiByChannel(
-		OverlapResults, Location, FQuat::Identity, ECollisionChannel::ECC_Pawn, FCollisionShape::MakeSphere(m_fSearchRadius), QueryParams
-	);
-
-	if (m_bShowDebugShape)
-	{
-		DrawDebugSphere(World, Location, m_fSearchRadius, 32, FColor::Emerald, false, 0.1f);
-	}
-
-	// 점수 계산
-	AActor* BestActor = nullptr;
-	float BestScore = -1.0f;
-
-	for (const FOverlapResult& Result : OverlapResults)
-	{
-		AActor* Actor = Result.GetActor();
-
-		if (!Actor || !Actor->Implements<UTargetable>())
-			continue;
-		if (!ITargetable::Execute_IsTargetable(Actor))
-			continue;
-
-		float Score = CalculateScore(Actor, Location, Forward);
-
-		if (Score > BestScore)
-		{
-			BestScore = Score;
-			BestActor = Actor;
+			m_eTargetingMode = ETargetingMode::SOFT_LOCK;
+			m_fLostTargetTimer = 0.f;
 		}
 	}
 
-	// 타겟 갱신
-	if (m_pCurrentTarget.Get() != BestActor)
+	//	2. 모드별 처리
+	if (m_eTargetingMode == ETargetingMode::HARD_LOCK)
 	{
-		ChangeTarget(BestActor);
+		m_fHardLockTimer += DeltaTime;
+		if (m_fHardLockTimer >= m_fHardLockInterval)
+		{
+			m_fHardLockTimer = 0.f;
+			SetHardLock(DeltaTime, Location);
+		}
 	}
+	else
+	{
+		m_fSoftLockTimer += DeltaTime;
+		if (m_fSoftLockTimer >= m_fSoftLockInterval)
+		{
+			m_fSoftLockTimer = 0.f;
+			SetSoftLock(Location, Forward, IgnoreActor);
+		}
+	}
+}
 
+void UTargetingComponent::ToggleLockOn()
+{
+	if (m_eTargetingMode == ETargetingMode::SOFT_LOCK)
+	{
+		if (!m_pCurrentTarget.IsValid()) return;
+
+		if (m_pCurrentTarget->Implements<UTargetable>())
+		{
+			if (!ITargetable::Execute_IsTargetable(m_pCurrentTarget.Get())) return;
+		}
+
+		m_eTargetingMode = ETargetingMode::HARD_LOCK;
+		m_fLostTargetTimer = 0.f;
+
+		if (m_pCurrentTarget->Implements<UTargetable>())
+		{
+			ITargetable::Execute_OnTargeted(m_pCurrentTarget.Get(), true);
+		}
+	}
+	else
+	{
+		ReleaseLock();
+	}
 }
 
 AActor* UTargetingComponent::GetCurrentTarget() const
@@ -110,32 +93,103 @@ AActor* UTargetingComponent::GetCurrentTarget() const
 	return m_pCurrentTarget.Get();
 }
 
-void UTargetingComponent::SetCurrentTarget(AActor* NewTarget)
-{
-	if (m_pCurrentTarget.Get() == NewTarget) return;
-	ChangeTarget(NewTarget);
-}
-
 ETargetingMode UTargetingComponent::GetTargetingMode() const
 {
 	return m_eTargetingMode;
 }
 
-void UTargetingComponent::ToggleLockMode()
+bool UTargetingComponent::IsHardLock() const
 {
+	return (m_eTargetingMode == ETargetingMode::HARD_LOCK);
 }
 
-void UTargetingComponent::ToggleLockOn()
+void UTargetingComponent::SetSoftLock(const FVector& Location, const FVector& Forward, AActor* IgnoreActor)
 {
-	if (!m_pCurrentTarget.IsValid() || !m_pCurrentTarget->Implements<UTargetable>())
+	//	1. 탐색 범위 세팅
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	TArray<FOverlapResult> OverlapResults;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(GetOwner());
+	if (IgnoreActor)
 	{
-		m_bIsLockOn = false;
+		QueryParams.AddIgnoredActor(IgnoreActor);
+	}
+
+	World->OverlapMultiByChannel(
+		OverlapResults, Location, FQuat::Identity, ECC_Pawn/*적 채널*/,
+		FCollisionShape::MakeSphere(m_fSearchRadius), QueryParams);
+
+	if (m_bShowDebug)
+	{
+		DrawDebugSphere(World, Location, m_fSearchRadius, 24, FColor::Emerald, false, m_fSoftLockInterval);
+	}
+
+	//	2. 최적 타겟 검색
+	AActor* BestTarget = nullptr;
+	float BestScore = -1.f;
+
+	for (const FOverlapResult& Result : OverlapResults)
+	{
+		AActor* Actor = Result.GetActor();
+		if (!Actor) continue;
+		if (!Actor->Implements<UTargetable>()) continue;
+		if (!ITargetable::Execute_IsTargetable(Actor)) continue;
+
+		// 시야각
+		if (!IsInViewAngle(Actor, Location, Forward)) continue;
+		// 가시성
+		if (!IsTargetVisible(Actor, Location)) continue;
+		// 점수
+		float Score = CalculateScore(Actor, Location, Forward);
+
+		if (Score > BestScore)
+		{
+			BestScore = Score;
+			BestTarget = Actor;
+		}
+	}
+
+	//	3. 타겟 변경
+	if (m_pCurrentTarget.Get() != BestTarget)
+	{
+		ChangeTarget(BestTarget);
+	}
+}
+
+void UTargetingComponent::SetHardLock(float DeltaTime, const FVector& Location)
+{
+	if (!m_pCurrentTarget.IsValid())
+	{
+		ReleaseLock();
 		return;
 	}
 
-	m_bIsLockOn = !m_bIsLockOn;
+	//	1. 타겟 상태 검사
+	if (m_pCurrentTarget->Implements<UTargetable>())
+	{
+		if (!ITargetable::Execute_IsTargetable(m_pCurrentTarget.Get()))
+		{
+			ReleaseLock();
+			return;
+		}
+	}
 
-	ITargetable::Execute_OnTargeted(m_pCurrentTarget.Get(), m_bIsLockOn);
+	//	2. 가시성
+	if (!IsTargetVisible(m_pCurrentTarget.Get(), Location))
+	{
+		m_fLostTargetTimer += DeltaTime;
+
+		if (m_fLostTargetTimer >= m_fHardLockLostTarget)
+		{
+			ReleaseLock();
+		}
+	}
+	else
+	{
+		m_fLostTargetTimer = 0.f;
+	}
 }
 
 float UTargetingComponent::CalculateScore(AActor* TargetActor, const FVector& Location, const FVector& Forward)
@@ -186,6 +240,16 @@ float UTargetingComponent::CalculateScore(AActor* TargetActor, const FVector& Lo
 	return FinalScore;
 }
 
+bool UTargetingComponent::IsTargetVisible(AActor* TargetActor, const FVector& StartLocation) const
+{
+	return false;
+}
+
+bool UTargetingComponent::IsInViewAngle(AActor* TargetActor, const FVector& Location, const FVector& Forward) const
+{
+	return false;
+}
+
 void UTargetingComponent::ChangeTarget(AActor* NewTarget)
 {
 	// 기존 타겟 제거
@@ -197,8 +261,18 @@ void UTargetingComponent::ChangeTarget(AActor* NewTarget)
 
 	m_pCurrentTarget = NewTarget;
 
-	if (m_pCurrentTarget.IsValid() && m_pCurrentTarget->Implements<UTargetable>())
+}
+
+void UTargetingComponent::ReleaseLock()
+{
+	if (m_eTargetingMode == ETargetingMode::HARD_LOCK)
 	{
-		ITargetable::Execute_OnTargeted(m_pCurrentTarget.Get(), m_bIsLockOn);
+		if (m_pCurrentTarget.IsValid() && m_pCurrentTarget->Implements<UTargetable>())
+		{
+			ITargetable::Execute_OnTargeted(m_pCurrentTarget.Get(), false);
+		}
 	}
+
+	m_eTargetingMode = ETargetingMode::SOFT_LOCK;
+	m_fLostTargetTimer = 0.f;
 }
