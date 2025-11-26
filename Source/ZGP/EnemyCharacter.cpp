@@ -40,6 +40,24 @@ UEnemyDazeComponent* AEnemyCharacter::GetDazeComponent() const
 	return m_pEnemyDazeComponent;
 }
 
+bool AEnemyCharacter::IsTargetable_Implementation() const
+{
+	return !IsActionState(EActionState::DEAD);
+}
+
+FVector AEnemyCharacter::GetTargetLocation_Implementation() const
+{
+	return GetMesh()->GetSocketLocation(TEXT("SpineSocket"));
+}
+
+void AEnemyCharacter::OnTargeted_Implementation(bool IsTargeted)
+{
+}
+
+void AEnemyCharacter::OnUnTargeted_Implementation()
+{
+}
+
 void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();

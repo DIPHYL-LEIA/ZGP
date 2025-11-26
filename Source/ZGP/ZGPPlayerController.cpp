@@ -51,6 +51,12 @@ AZGPPlayerController::AZGPPlayerController()
 		IA_Tag = TagActionAsset.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UInputAction> LockOnActionAsset(TEXT("/Game/ZGProject/ZGPInput/ia-lockOn.ia-lockOn"));
+	if (LockOnActionAsset.Succeeded())
+	{
+		IA_LockOn = LockOnActionAsset.Object;
+	}
+
 	// Input Mapping Context
 	static ConstructorHelpers::FObjectFinder<UInputMappingContext> DefaultMappingContextAsset(TEXT("/Game/ZGProject/ZGPInput/imc-default.imc-default"));
 	if (DefaultMappingContextAsset.Succeeded())
@@ -123,6 +129,29 @@ void AZGPPlayerController::BeginPlay()
 	}
 }
 
+void AZGPPlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (m_pTargetingComponent)
+	{
+		APawn* ControlPawn = GetPawn();
+		if (ControlPawn)
+		{
+			const FVector Location = ControlPawn->GetActorLocation();
+			// ControlPawn의 Forward가 아닌 플레이어가 보는 방향인 카메라의 Forward 사용하는 것 고려
+			FVector Forward = ControlPawn->GetActorForwardVector();
+			if (PlayerCameraManager)
+			{
+				Forward = PlayerCameraManager->GetCameraRotation().Vector();
+			}
+
+			m_pTargetingComponent->UpdateTargeting(DeltaTime, Location, Forward, ControlPawn);
+		}
+	}
+
+}
+
 void AZGPPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
@@ -158,6 +187,12 @@ void AZGPPlayerController::SetupInputComponent()
 		if (IA_Tag)
 		{
 			EnhancedInputComponent->BindAction(IA_Tag, ETriggerEvent::Started, this, &AZGPPlayerController::HandleTag);
+		}
+
+		// LockOn 바인딩
+		if (IA_LockOn)
+		{
+			EnhancedInputComponent->BindAction(IA_LockOn, ETriggerEvent::Started, this, &AZGPPlayerController::HondleLockOn);
 		}
 	}
 }
@@ -229,6 +264,14 @@ void AZGPPlayerController::HandleTag()
 	if (m_pSquadManagerComponent)
 	{
 		m_pSquadManagerComponent->RequestTag();
+	}
+}
+
+void AZGPPlayerController::HondleLockOn()
+{
+	if (m_pTargetingComponent)
+	{
+		m_pTargetingComponent->ToggleLockOn();
 	}
 }
 

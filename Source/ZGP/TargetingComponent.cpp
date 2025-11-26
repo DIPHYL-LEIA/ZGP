@@ -151,6 +151,20 @@ void UTargetingComponent::SetSoftLock(const FVector& Location, const FVector& Fo
 		}
 	}
 
+	// 디버그
+	if (m_bShowDebug && BestTarget)
+	{
+		FVector TargetLoc = BestTarget->GetActorLocation();
+		if (BestTarget->Implements<UTargetable>())
+		{
+			TargetLoc = ITargetable::Execute_GetTargetLocation(BestTarget);
+		}
+
+		// 최종 타겟은 초록색(Green)으로 표시하여 구별
+		DrawDebugLine(GetWorld(), Location, TargetLoc, FColor::Green, false, m_fSoftLockInterval, 0, 2.0f);
+		DrawDebugSphere(GetWorld(), TargetLoc, 30.f, 12, FColor::Green, false, m_fSoftLockInterval);
+	}
+
 	//	3. 타겟 변경
 	if (m_pCurrentTarget.Get() != BestTarget)
 	{
@@ -212,8 +226,8 @@ float UTargetingComponent::CalculateScore(AActor* TargetActor, const FVector& Lo
 	FVector LocationXY = FVector(Location.X, Location.Y, 0.f);
 	FVector TargetLocationXY = FVector(TargetLocation.X, TargetLocation.Y, 0.f);
 	FVector ForwardXY = FVector(Forward.X, Forward.Y, 0.f).GetSafeNormal();
-
 	FVector TargetDirectionXY = (TargetLocationXY - LocationXY).GetSafeNormal();
+
 	float Dot = FVector::DotProduct(ForwardXY, TargetDirectionXY);
 
 	// 시야각 밖
@@ -242,12 +256,48 @@ float UTargetingComponent::CalculateScore(AActor* TargetActor, const FVector& Lo
 
 bool UTargetingComponent::IsTargetVisible(AActor* TargetActor, const FVector& StartLocation) const
 {
-	return false;
+	if (!TargetActor) return false;
+
+	UWorld* World = GetWorld();
+	if (!World) return false;
+
+	FVector EndLocation = TargetActor->GetActorLocation();
+	if (TargetActor->Implements<UTargetable>())
+	{
+		EndLocation = ITargetable::Execute_GetTargetLocation(TargetActor);
+	}
+
+	// 라인 트레이스
+	FHitResult HitResult;
+	FCollisionQueryParams TraceParams;
+	TraceParams.AddIgnoredActor(GetOwner());
+	TraceParams.AddIgnoredActor(TargetActor);
+
+	bool bHit = World->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, TraceParams);
+
+	return !bHit;
 }
 
 bool UTargetingComponent::IsInViewAngle(AActor* TargetActor, const FVector& Location, const FVector& Forward) const
 {
-	return false;
+	if (!TargetActor) return false;
+
+	// 타겟 위치
+	FVector TargetLocation = TargetActor->GetActorLocation();
+	if (TargetActor->Implements<UTargetable>())
+	{
+		TargetLocation = ITargetable::Execute_GetTargetLocation(TargetActor);
+	}
+
+	// 2D 각도
+	FVector LocationXY = FVector(Location.X, Location.Y, 0.f);
+	FVector TargetLocationXY = FVector(TargetLocation.X, TargetLocation.Y, 0.f);
+	FVector ForwardXY = FVector(Forward.X, Forward.Y, 0.f).GetSafeNormal();
+	FVector DirectionXY = (TargetLocationXY - LocationXY).GetSafeNormal();
+
+	float Dot = FVector::DotProduct(ForwardXY, DirectionXY);
+
+	return (Dot >= m_fSearchAngle);
 }
 
 void UTargetingComponent::ChangeTarget(AActor* NewTarget)
@@ -260,6 +310,12 @@ void UTargetingComponent::ChangeTarget(AActor* NewTarget)
 	}
 
 	m_pCurrentTarget = NewTarget;
+
+	if (m_pCurrentTarget.IsValid() && m_pCurrentTarget->Implements<UTargetable>())
+	{
+		bool bIsLock = (m_eTargetingMode == ETargetingMode::HARD_LOCK);
+		ITargetable::Execute_OnTargeted(m_pCurrentTarget.Get(), bIsLock);
+	}
 
 }
 

@@ -23,6 +23,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 
 	// Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -50,6 +51,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> IA_Tag;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> IA_LockOn;
+
 	// Tag
 	UPROPERTY(EditDefaultsOnly, Category = "Tag")
 	TArray<TSubclassOf<class APlayerCharacter>> m_arTagCharacter;
@@ -66,5 +70,6 @@ protected:
 
 	void HandleAttack();
 	void HandleTag();
+	void HondleLockOn();
 
 };
