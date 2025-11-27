@@ -6,11 +6,12 @@
 #include "EnemyAIState.generated.h"
 
 UENUM(BlueprintType)
-enum class EEnemyAIStae : uint8
+enum class EEnemyAIState : uint8
 {
 	IDLE		UMETA(DisplayName = "Idle"),
 	CHASE		UMETA(DisplayName = "Chase"),
 	ATTACK		UMETA(DisplayName = "Attack"),
-	STOP		UMETA(DisplayName = "Stop"),
+	HIT			UMETA(DisplayName = "Hit"),
+	DAZED		UMETA(DisplayName = "Dazed"),
 	DEAD		UMETA(DisplayName = "Dead"),
 };
