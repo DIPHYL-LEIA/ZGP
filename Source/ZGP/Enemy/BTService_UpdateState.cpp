@@ -30,9 +30,7 @@ void UBTService_UpdateState::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* 
 	// 현재 상태 확인
 	EEnemyAIState CurrentState = static_cast<EEnemyAIState>(Blackboard->GetValueAsEnum(m_AIStateKey.SelectedKeyName));
 
-	if (CurrentState == EEnemyAIState::DEAD ||
-		CurrentState == EEnemyAIState::DAZED ||
-		CurrentState == EEnemyAIState::HIT)
+	if (CurrentState == EEnemyAIState::HIT)
 	{
 		return;
 	}

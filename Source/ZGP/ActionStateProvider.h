@@ -19,6 +19,6 @@ class ZGP_API IActionStateProvider
 
 public:
 	virtual bool CanChangeActionState(EActionState NewState) const = 0;
-	virtual void SetActionState(EActionState NewState) const = 0;
+	virtual void SetActionState(EActionState NewState) = 0;
 	virtual bool IsActionState(EActionState State) const = 0;
 };

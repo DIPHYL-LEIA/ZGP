@@ -90,7 +90,7 @@ bool ABaseCharacter::CanChangeActionState(EActionState NewState) const
 	return false;
 }
 
-void ABaseCharacter::SetActionState(EActionState NewState) const
+void ABaseCharacter::SetActionState(EActionState NewState)
 {
 	if (m_pActionStateComponent)
 	{

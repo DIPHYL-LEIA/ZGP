@@ -192,7 +192,7 @@ void AZGPPlayerController::SetupInputComponent()
 		// LockOn ¹ÙÀÎµù
 		if (IA_LockOn)
 		{
-			EnhancedInputComponent->BindAction(IA_LockOn, ETriggerEvent::Started, this, &AZGPPlayerController::HondleLockOn);
+			EnhancedInputComponent->BindAction(IA_LockOn, ETriggerEvent::Started, this, &AZGPPlayerController::HandleLockOn);
 		}
 	}
 }
@@ -267,7 +267,7 @@ void AZGPPlayerController::HandleTag()
 	}
 }
 
-void AZGPPlayerController::HondleLockOn()
+void AZGPPlayerController::HandleLockOn()
 {
 	if (m_pTargetingComponent)
 	{

@@ -19,6 +19,8 @@ UComboComponent::UComboComponent()
 
 void UComboComponent::BeginPlay()
 {
+	Super::BeginPlay();
+
 	// 생성 시점 확인 필요
 	AActor* Owner = GetOwner();
 	if (Owner)

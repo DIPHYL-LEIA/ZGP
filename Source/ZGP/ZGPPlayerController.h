@@ -70,6 +70,6 @@ protected:
 
 	void HandleAttack();
 	void HandleTag();
-	void HondleLockOn();
+	void HandleLockOn();
 
 };

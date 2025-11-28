@@ -46,7 +46,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual bool CanChangeActionState(EActionState NewState) const override;
-	virtual void SetActionState(EActionState NewState) const override;
+	virtual void SetActionState(EActionState NewState) override;
 	virtual bool IsActionState(EActionState State) const override;
 
 	virtual void ApplyCombatEffect_Implementation(const FDamageData& DamageData) override;

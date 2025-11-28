@@ -48,8 +48,9 @@ void UTargetingComponent::UpdateTargeting(float DeltaTime, const FVector& Locati
 		m_fHardLockTimer += DeltaTime;
 		if (m_fHardLockTimer >= m_fHardLockInterval)
 		{
+			float GapTimer = m_fHardLockTimer;
 			m_fHardLockTimer = 0.f;
-			SetHardLock(DeltaTime, Location);
+			SetHardLock(GapTimer, Location);
 		}
 	}
 	else
