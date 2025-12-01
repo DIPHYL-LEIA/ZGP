@@ -23,15 +23,15 @@ public:
 	EEnemyAIState GetCurrentAIState() const;
 
 	// ActionState 기반 행동 가능 여부
-	UFUNCTION(BlueprintPure, Category = "AI")
-	bool CanAct() const;
+	//UFUNCTION(BlueprintPure, Category = "AI")
+	//bool CanAct() const;
 
 protected:
-	virtual void OnPossess(APawn* InPawn) override;
-	virtual void OnUnPossess() override;
+	//virtual void OnPossess(APawn* InPawn) override;
+	//virtual void OnUnPossess() override;
 
-	UFUNCTION()
-	void HandleActionStateChanged(EActionState OldState, EActionState NewState);
+	//UFUNCTION()
+	//void HandleActionStateChanged(EActionState OldState, EActionState NewState);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
