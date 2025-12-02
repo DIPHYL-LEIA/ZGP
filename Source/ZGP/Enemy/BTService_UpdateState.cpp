@@ -30,20 +30,20 @@ void UBTService_UpdateState::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* 
 	// 현재 상태 확인
 	EEnemyAIState CurrentState = static_cast<EEnemyAIState>(Blackboard->GetValueAsEnum(m_AIStateKey.SelectedKeyName));
 
-	if (CurrentState == EEnemyAIState::HIT)
-	{
-		return;
-	}
+	//if (CurrentState == EEnemyAIState::HIT)
+	//{
+	//	return;
+	//}
 
 	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	APawn* PlayerPawn = PC ? PC->GetPawn() : nullptr;
 
-	if (!PlayerPawn)
-	{
-		Blackboard->ClearValue(m_TargetActorKey.SelectedKeyName);
-		Blackboard->SetValueAsEnum(m_AIStateKey.SelectedKeyName, static_cast<uint8>(EEnemyAIState::IDLE));
-		return;
-	}
+	//if (!PlayerPawn)
+	//{
+	//	Blackboard->ClearValue(m_TargetActorKey.SelectedKeyName);
+	//	Blackboard->SetValueAsEnum(m_AIStateKey.SelectedKeyName, static_cast<uint8>(EEnemyAIState::IDLE));
+	//	return;
+	//}
 
 	FVector MyLocation = ControlPawn->GetActorLocation();
 	FVector TargetLocation = PlayerPawn->GetActorLocation();

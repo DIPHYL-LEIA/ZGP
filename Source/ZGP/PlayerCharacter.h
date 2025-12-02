@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "BaseCharacter.h"
 #include "Taggable.h"
+#include "Targetable.h"
 #include "PlayerCharacter.generated.h"
 
 UCLASS()
-class ZGP_API APlayerCharacter : public ABaseCharacter, public ITaggable
+class ZGP_API APlayerCharacter : public ABaseCharacter, public ITaggable, public ITargetable
 {
 	GENERATED_BODY()
 
@@ -27,6 +28,12 @@ public:
 	virtual bool CanTag_Implementation() const override;
 	virtual void OnTagIn_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation) override;
 	virtual void OnTagOut_Implementation() override;
+
+	// Target
+	virtual bool IsTargetable_Implementation() const override;
+	virtual FVector GetTargetLocation_Implementation() const override;
+	virtual void OnTargeted_Implementation(bool IsTargeted) override;
+	virtual void OnUnTargeted_Implementation() override;
 
 protected:
 	virtual void BeginPlay() override;

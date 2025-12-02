@@ -141,4 +141,30 @@ void APlayerCharacter::OnTagOut_Implementation()
 	SetActorEnableCollision(false);
 }
 
+bool APlayerCharacter::IsTargetable_Implementation() const
+{
+	if (IsActionState(EActionState::DEAD)) return false;
+	if (IsHidden()) return false;
+	if (!GetActorEnableCollision()) return false;
+
+	return true;
+}
+
+FVector APlayerCharacter::GetTargetLocation_Implementation() const
+{
+	if (GetMesh())
+	{
+		return GetMesh()->GetSocketLocation(TEXT("spine_03"));
+	}
+	return GetActorLocation();
+}
+
+void APlayerCharacter::OnTargeted_Implementation(bool IsTargeted)
+{
+}
+
+void APlayerCharacter::OnUnTargeted_Implementation()
+{
+}
+
 
