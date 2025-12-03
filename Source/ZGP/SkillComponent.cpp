@@ -20,7 +20,7 @@ void USkillComponent::InitializeComponent()
 
 	if (m_pSkillDataTable == nullptr || m_pComboDataTable == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("SkillCompontne::InitializeComp - NO DataTable"));
+		UE_LOG(LogTemp, Error, TEXT("SkillComponent::InitializeComp - NO DataTable"));
 	}
 
 }
@@ -33,9 +33,10 @@ void USkillComponent::ExecuteComboAttack(int32 ComboStep)
 	const FComboData* pCombo = m_pComboDataTable->FindRow<FComboData>(m_currentComboID, TEXT("ExecuteComboAttack"));
 	if (pCombo == nullptr) return;
 
-	if (pCombo->SkillID.IsValidIndex(ComboStep - 1) == false) return;
+	const FComboNode* ComboNode = pCombo->ComboNodes.Find(ComboStep);
+	if (ComboNode == nullptr) return;
 
-	const FName SkillId = pCombo->SkillID[ComboStep - 1];
+	const FName SkillId = ComboNode->SkillID;
 
 	const FSkillData* pSkillData = m_pSkillDataTable->FindRow<FSkillData>(SkillId, TEXT("ExecuteComboAttack"));
 	if (pSkillData == nullptr) return;
