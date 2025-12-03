@@ -45,7 +45,7 @@ bool UActionStateComponent::CanChangeActionState(EActionState NewState) const
 {
 	if (m_currentState == EActionState::DEAD) return false;
 
-	// 같은 상태로의 변화는 막되 공격은 허용
+	// 같은 상태로의 변화는 막되 공격은 허용(연타)
 	if (m_currentState == NewState)
 	{
 		if (NewState == EActionState::ATTACKING)
@@ -53,10 +53,15 @@ bool UActionStateComponent::CanChangeActionState(EActionState NewState) const
 		return false;
 	}
 
+	// 공격/회피 후 Idle 상태로 전환 가능 처리
+	if (NewState == EActionState::IDLE && IsTemporaryState())
+		return true;
+
 	int32 CurrentPriority = GetStatePriority(m_currentState);
 	int32 NewPriority = GetStatePriority(NewState);
 
-	if (NewPriority > CurrentPriority) return true;
+	if (NewPriority > CurrentPriority) 
+		return true;
 
 	// 예외)
 	// 공격 중 회피 캔슬 허용

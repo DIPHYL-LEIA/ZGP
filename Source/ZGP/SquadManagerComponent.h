@@ -36,8 +36,8 @@ private:
 
 	// 캐릭터 앞 나올 위치 지정
 	UPROPERTY(EditDefaultsOnly, Category = "Tag")
-	float m_fTagSpawnDistance = 150.f;
+	float m_fTagSpawnDistance = 1.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Tag")
-	float m_fTagSpawnSideOffset = 45.f;
+	float m_fTagSpawnSideOffset = 1.f;
 };
