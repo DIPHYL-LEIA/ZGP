@@ -18,7 +18,7 @@ public:
 
 	virtual void SetupInputComponent() override;
 
-	virtual AActor* GetCurrentTargetActor_Implementation() const override;
+	virtual AActor* GetCurrentTargetActor_Implementation() override;
 	virtual void SetCurrentTargetActor_Implementation(AActor* NewTarget) override;
 
 protected:

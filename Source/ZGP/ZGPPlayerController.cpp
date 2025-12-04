@@ -197,7 +197,7 @@ void AZGPPlayerController::SetupInputComponent()
 	}
 }
 
-AActor* AZGPPlayerController::GetCurrentTargetActor_Implementation() const
+AActor* AZGPPlayerController::GetCurrentTargetActor_Implementation()
 {
 	if (m_pTargetingComponent)
 	{

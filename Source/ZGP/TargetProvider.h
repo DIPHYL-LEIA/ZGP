@@ -18,7 +18,7 @@ class ZGP_API ITargetProvider
 
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Targeting")
-	AActor* GetCurrentTargetActor() const;
+	AActor* GetCurrentTargetActor();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Targeting")
 	void SetCurrentTargetActor(AActor* NewTarget);

@@ -4,20 +4,22 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
-#include "../ActionState.h"
-#include "EnemyAIState.h"
+#include "../TargetProvider.h"
 #include "EnemyAIController.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ZGP_API AEnemyAIController : public AAIController
+class ZGP_API AEnemyAIController : public AAIController, public ITargetProvider
 {
 	GENERATED_BODY()
 	
 public:
 	AEnemyAIController();
+
+	virtual AActor* GetCurrentTargetActor_Implementation() override;
+	virtual void SetCurrentTargetActor_Implementation(AActor* NewTarget) override;
 
 	UFUNCTION(BlueprintCallable, Category = "AI Targeting")
 	AActor* GetCurrentTarget();
@@ -32,6 +34,10 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
 
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	TObjectPtr<class UBehaviorTree> m_pBehaviorTree;
+
+
 	UPROPERTY(EditDefaultsOnly, Category = "AI Targeting")
 	float m_fSearchRadius = 1500.f;
 
@@ -45,7 +51,7 @@ protected:
 	bool m_bUseMaxAggroRange = false;
 
 private:
-	TWeakObjectPtr<AActor> CachedTarget;
+	TWeakObjectPtr<AActor> m_pCachedTarget;
 	float m_fSearchCooldownTimer = 0.f;
 
 	bool IsTargetValid(AActor* Target) const;

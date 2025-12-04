@@ -11,7 +11,17 @@
 
 AEnemyAIController::AEnemyAIController()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
+}
+
+AActor* AEnemyAIController::GetCurrentTargetActor_Implementation()
+{
+	return GetCurrentTarget();
+}
+
+void AEnemyAIController::SetCurrentTargetActor_Implementation(AActor* NewTarget)
+{
+	m_pCachedTarget = NewTarget;
 }
 
 void AEnemyAIController::BeginPlay()
@@ -24,13 +34,19 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 
 	ClearTarget();
+
+	if (m_pBehaviorTree)
+	{
+		RunBehaviorTree(m_pBehaviorTree);
+	}
 }
+
 
 AActor* AEnemyAIController::GetCurrentTarget()
 {
-	if (CachedTarget.IsValid())
+	if (m_pCachedTarget.IsValid())
 	{
-		AActor* Target = CachedTarget.Get();
+		AActor* Target = m_pCachedTarget.Get();
 
 		if (IsTargetValid(Target))
 		{
@@ -38,7 +54,7 @@ AActor* AEnemyAIController::GetCurrentTarget()
 		}
 
 		// 타겟 무효화
-		CachedTarget.Reset();
+		m_pCachedTarget.Reset();
 	}
 
 	// 연속 탐색 방지용 쿨타임 체크
@@ -54,7 +70,7 @@ AActor* AEnemyAIController::GetCurrentTarget()
 
 	if (NewTarget)
 	{
-		CachedTarget = NewTarget;
+		m_pCachedTarget = NewTarget;
 	}
 	else
 	{
@@ -84,7 +100,7 @@ AActor* AEnemyAIController::FindNewTarget() const
 
 	// 가장 가까운 타겟 선정
 	AActor* BestTarget = nullptr;
-	float MinDistanceSquared = FLT_MAX;
+	float MinDistanceSquared = FLT_MAX;						//////////////
 
 	for (const FOverlapResult& Result : OverlapResults)
 	{
@@ -106,7 +122,7 @@ AActor* AEnemyAIController::FindNewTarget() const
 
 void AEnemyAIController::ClearTarget()
 {
-	CachedTarget.Reset();
+	m_pCachedTarget.Reset();
 	m_fSearchCooldownTimer = 0.f;
 }
 
