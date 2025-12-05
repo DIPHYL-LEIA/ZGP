@@ -51,9 +51,9 @@ protected:
 	bool m_bUseMaxAggroRange = false;
 
 private:
+	// Target
 	TWeakObjectPtr<AActor> m_pCachedTarget;
 	float m_fSearchCooldownTimer = 0.f;
-
 	bool IsTargetValid(AActor* Target) const;
 
 };

@@ -52,7 +52,7 @@ void UBTService_UpdateTarget::TickNode(UBehaviorTreeComponent& OwnerComp, uint8*
 	}
 	else
 	{
-		BB->SetValueAsFloat(AIKeys::TargetDistance, 0.f);
+		BB->SetValueAsFloat(AIKeys::TargetDistance, -1.f);
 		BB->SetValueAsFloat(AIKeys::TargetAngle, 0.f);
 	}
 

@@ -5,6 +5,8 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
+#include "../ZGPGameState.h"
+#include "../TokenManagerComponent.h"
 #include "../Targetable.h"
 #include "Engine/World.h"
 #include "Engine/OverlapResult.h"
@@ -12,6 +14,11 @@
 AEnemyAIController::AEnemyAIController()
 {
 	PrimaryActorTick.bCanEverTick = false;
+}
+
+void AEnemyAIController::BeginPlay()
+{
+	Super::BeginPlay();
 }
 
 AActor* AEnemyAIController::GetCurrentTargetActor_Implementation()
@@ -24,10 +31,6 @@ void AEnemyAIController::SetCurrentTargetActor_Implementation(AActor* NewTarget)
 	m_pCachedTarget = NewTarget;
 }
 
-void AEnemyAIController::BeginPlay()
-{
-	Super::BeginPlay();
-}
 
 void AEnemyAIController::OnPossess(APawn* InPawn)
 {
@@ -125,7 +128,6 @@ void AEnemyAIController::ClearTarget()
 	m_pCachedTarget.Reset();
 	m_fSearchCooldownTimer = 0.f;
 }
-
 
 bool AEnemyAIController::IsTargetValid(AActor* Target) const
 {
