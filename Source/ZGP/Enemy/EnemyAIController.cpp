@@ -5,8 +5,6 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
-#include "../ZGPGameState.h"
-#include "../TokenManagerComponent.h"
 #include "../Targetable.h"
 #include "Engine/World.h"
 #include "Engine/OverlapResult.h"

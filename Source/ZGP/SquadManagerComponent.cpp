@@ -42,7 +42,6 @@ void USquadManagerComponent::RequestTag()
 
 	if (m_pActiveCharacter == nullptr || StandbyCharacter == nullptr) return;
 
-	// C++에서 인터페이스 호출할 때 'Execute_함수명'
 	if (ITaggable::Execute_CanTag(m_pActiveCharacter))
 	{
 		DoTag(StandbyCharacter, m_pActiveCharacter);

@@ -23,6 +23,21 @@ void UAttributeAnomalyComponent::BeginPlay()
 
 }
 
-void UAttributeAnomalyComponent::TakeAnomalyDamage(float DamageAmount, EAttributeType Type)
+void UAttributeAnomalyComponent::TakeAnomalyDamage(float DamageValue, EAttributeType Type)
 {
+	if (Type == EAttributeType::NONE || DamageValue == 0.0f) return;
+
+	float& CurrentGauge = m_mapAnomalyGauges.FindOrAdd(Type);
+	CurrentGauge = FMath::Clamp(CurrentGauge + DamageValue, 0.f, m_fMaxAnomalyGauges);
+
+	if (CurrentGauge >= m_fMaxAnomalyGauges)
+	{
+		// 이미 터진 상태인지 (버프 컴포넌트 확인 필요)
+
+		OnAnomalyStateApplied.Broadcast(Type);
+
+		CurrentGauge = 0.f;
+
+		UE_LOG(LogTemp, Log, TEXT("[AttributeAnomalyComponent] TakeAnomalyDamage : Anomaly Triggered %d"), (int32)Type);
+	}
 }
