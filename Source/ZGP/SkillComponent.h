@@ -7,6 +7,7 @@
 #include "SkillComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRequestPlayMontage, UAnimMontage*, MontageToPlay);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSkillExecuteCompleted);
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class ZGP_API USkillComponent : public UActorComponent
@@ -21,10 +22,18 @@ public:
 	// Bind ComboComponent
 	UFUNCTION()
 	void ExecuteComboAttack(int32 ComboStep);
+	
+	UFUNCTION(BlueprintCallable, Category = "Skill")
+	void ExecuteSkillID(FName SkillID);
 
 	// Delegate
 	UPROPERTY(BlueprintAssignable, Category = "Skill")
 	FOnRequestPlayMontage OnRequestPlayMontage;
+
+	UPROPERTY(BlueprintAssignable, Category = "Skill")
+	FOnSkillExecuteCompleted OnSkillCompleted;
+
+	void NotifySkillCompleted();
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SkillData", meta = (AllowPrivateAccess = "true"))

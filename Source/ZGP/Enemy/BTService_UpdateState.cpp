@@ -4,8 +4,9 @@
 #include "BTService_UpdateState.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "GameFramework/PlayerController.h"
-#include "Kismet/GameplayStatics.h"
+#include "../ActionStateProvider.h"
+#include "../ActionState.h"
+#include "AIKeys.h"
 
 UBTService_UpdateState::UBTService_UpdateState()
 {
@@ -21,34 +22,17 @@ void UBTService_UpdateState::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* 
 	AAIController* AIController = OwnerComp.GetAIOwner();
 	if (!AIController) return;
 
-	APawn* ControlPawn = AIController->GetPawn();
-	if (!ControlPawn) return;
+	APawn* MyPawn = AIController->GetPawn();
+	if (!MyPawn) return;
 
-	UBlackboardComponent* Blackboard = OwnerComp.GetBlackboardComponent();
-	if (!Blackboard) return;
+	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
+	if (!BB) return;
 
-	// 현재 상태 확인
-	EEnemyAIState CurrentState = static_cast<EEnemyAIState>(Blackboard->GetValueAsEnum(m_AIStateKey.SelectedKeyName));
+	IActionStateProvider* ActionState = Cast<IActionStateProvider>(MyPawn);
+	if (!ActionState) return;
 
-	//if (CurrentState == EEnemyAIState::HIT)
-	//{
-	//	return;
-	//}
-
-	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	APawn* PlayerPawn = PC ? PC->GetPawn() : nullptr;
-
-	//if (!PlayerPawn)
-	//{
-	//	Blackboard->ClearValue(m_TargetActorKey.SelectedKeyName);
-	//	Blackboard->SetValueAsEnum(m_AIStateKey.SelectedKeyName, static_cast<uint8>(EEnemyAIState::IDLE));
-	//	return;
-	//}
-
-	FVector MyLocation = ControlPawn->GetActorLocation();
-	FVector TargetLocation = PlayerPawn->GetActorLocation();
-	float Distance = FVector::Dist(MyLocation, TargetLocation);
-
-	AActor* CurrentTarget = Cast<AActor>(Blackboard->GetValueAsObject(m_TargetActorKey.SelectedKeyName));
-
+	// ActionState와 Blackboard 동기화
+	BB->SetValueAsBool(AIKeys::IsDead, ActionState->IsActionState(EActionState::DEAD));
+	BB->SetValueAsBool(AIKeys::IsDazed, ActionState->IsActionState(EActionState::DAZED));
+	BB->SetValueAsBool(AIKeys::IsHurt, ActionState->IsActionState(EActionState::HIT));
 }

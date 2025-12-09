@@ -51,5 +51,27 @@ void USkillComponent::ExecuteComboAttack(int32 ComboStep)
 
 }
 
+void USkillComponent::ExecuteSkillID(FName SkillID)
+{
+	if (m_pSkillDataTable == nullptr) return;
+	if (SkillID.IsNone()) return;
+
+	const FSkillData* pSkillData = m_pSkillDataTable->FindRow<FSkillData>(SkillID, TEXT("ExecuteSkillID"));
+	if (pSkillData == nullptr) return;
+
+	UAnimMontage* pMontage = pSkillData->Montage.LoadSynchronous();
+
+	if (pMontage)
+	{
+		OnRequestPlayMontage.Broadcast(pMontage);
+	}
+
+}
+
+void USkillComponent::NotifySkillCompleted()
+{
+	OnSkillCompleted.Broadcast();
+}
+
 
 

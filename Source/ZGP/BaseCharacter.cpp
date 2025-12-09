@@ -55,6 +55,11 @@ void ABaseCharacter::HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted
 		GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &ABaseCharacter::HandleMontageEnded);
 	}
 
+	if (m_pSkillComponent)
+	{
+		m_pSkillComponent->NotifySkillCompleted();
+	}
+
 	if (bInterrupted) return;
 
 	if (m_pActionStateComponent && m_pActionStateComponent->IsTemporaryState())
