@@ -33,6 +33,10 @@ private:
 	UFUNCTION()
 	void HandleSkillCompleted();
 
+	class USkillComponent* GetSkillComponent(UBehaviorTreeComponent& OwnerComp) const;
+
+	void UnbindSkillDelegate(UBehaviorTreeComponent& OwnerComp);
+
 	TWeakObjectPtr<UBehaviorTreeComponent> m_pCacheBTComponent;
 
 };

@@ -10,8 +10,8 @@ namespace AIKeys
 	const FName TargetDistance = TEXT("TargetDistance");
 	const FName TargetAngle = TEXT("TargetAngle");
 
-	const FName IsDead = TEXT("IsHurt");
-	const FName IsDazed = TEXT("IsHurt");
+	const FName IsDead = TEXT("IsDead");
+	const FName IsDazed = TEXT("IsDazed");
 	const FName IsHurt = TEXT("IsHurt");
 	
 	const FName HasToken = TEXT("HasToken");

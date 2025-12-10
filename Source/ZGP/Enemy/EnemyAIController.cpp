@@ -108,6 +108,9 @@ AActor* AEnemyAIController::FindNewTarget() const
 		AActor* Actor = Result.GetActor();
 
 		if (!Actor || Actor == MyPawn) continue;
+
+		if (!Actor->Implements<UTargetable>()) continue;
+
 		if (!ITargetable::Execute_IsTargetable(Actor)) continue;
 
 		float DistanceSquared = FVector::DistSquared(MyLocation, Actor->GetActorLocation());

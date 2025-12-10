@@ -24,7 +24,7 @@ public:
 	void ExecuteComboAttack(int32 ComboStep);
 	
 	UFUNCTION(BlueprintCallable, Category = "Skill")
-	void ExecuteSkillID(FName SkillID);
+	bool ExecuteSkillID(FName SkillID);
 
 	// Delegate
 	UPROPERTY(BlueprintAssignable, Category = "Skill")
