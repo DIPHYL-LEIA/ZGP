@@ -3,6 +3,7 @@
 #include "ZGPGameMode.h"
 #include "PlayerCharacter.h"
 #include "ZGPPlayerController.h"
+#include "ZGPGameState.h"
 #include "UObject/ConstructorHelpers.h"
 
 AZGPGameMode::AZGPGameMode()
@@ -20,4 +21,6 @@ AZGPGameMode::AZGPGameMode()
 	{
 		PlayerControllerClass = PlayerControllerClassFinder.Class;
 	}
+
+	GameStateClass = AZGPGameState::StaticClass();
 }

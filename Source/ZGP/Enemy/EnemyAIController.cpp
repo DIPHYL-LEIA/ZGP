@@ -110,6 +110,7 @@ AActor* AEnemyAIController::FindNewTarget() const
 		if (!Actor || Actor == MyPawn) continue;
 
 		if (!Actor->Implements<UTargetable>()) continue;
+		if (Actor->GetClass()->IsChildOf(MyPawn->GetClass())) continue;		// 타겟 본인 검사 이 방법 뿐?
 
 		if (!ITargetable::Execute_IsTargetable(Actor)) continue;
 
