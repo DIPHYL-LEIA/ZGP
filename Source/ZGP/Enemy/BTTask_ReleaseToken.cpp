@@ -15,14 +15,11 @@ UBTTask_ReleaseToken::UBTTask_ReleaseToken()
 
 EBTNodeResult::Type UBTTask_ReleaseToken::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
+	FBTContext Context;
+	if (!GetBTContext(OwnerComp, Context, false)) return EBTNodeResult::Failed;
+
 	UWorld* World = GetWorld();
 	if (!World) return EBTNodeResult::Failed;
-
-	AAIController* AIController = OwnerComp.GetAIOwner();
-	if (!AIController) return EBTNodeResult::Failed;
-
-	APawn* MyPawn = AIController->GetPawn();
-	if (!MyPawn) return EBTNodeResult::Failed;
 
 	AZGPGameState* GameState = World->GetGameState<AZGPGameState>();
 	if (!GameState) return EBTNodeResult::Failed;
@@ -30,12 +27,11 @@ EBTNodeResult::Type UBTTask_ReleaseToken::ExecuteTask(UBehaviorTreeComponent& Ow
 	UTokenManagerComponent* TokenManagerComponent = GameState->GetTokenComponent();
 	if (!TokenManagerComponent) return EBTNodeResult::Failed;
 
-	TokenManagerComponent->ReleaseToken(MyPawn);
+	TokenManagerComponent->ReleaseToken(Context.Pawn);
 
-	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
-	if (BB)
+	if (Context.BB)
 	{
-		BB->SetValueAsBool(AIKeys::HasToken, false);
+		Context.BB->SetValueAsBool(AIKeys::HasToken, false);
 	}
 
 	return EBTNodeResult::Succeeded;

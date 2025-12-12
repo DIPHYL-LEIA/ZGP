@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTTaskNode.h"
+#include "BTTask_Base.h"
 #include "BTTask_RotateToTarget.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ZGP_API UBTTask_RotateToTarget : public UBTTaskNode
+class ZGP_API UBTTask_RotateToTarget : public UBTTask_Base
 {
 	GENERATED_BODY()
 

@@ -15,14 +15,11 @@ UBTTask_RequestToken::UBTTask_RequestToken()
 
 EBTNodeResult::Type UBTTask_RequestToken::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
+	FBTContext Context;
+	if (!GetBTContext(OwnerComp, Context, false)) return EBTNodeResult::Failed;
+
 	UWorld* World = GetWorld();
 	if (!World) return EBTNodeResult::Failed;
-
-	AAIController* AIController = OwnerComp.GetAIOwner();
-	if (!AIController) return EBTNodeResult::Failed;
-
-	APawn* MyPawn = AIController->GetPawn();
-	if (!MyPawn) return EBTNodeResult::Failed;
 
 	AZGPGameState* GameState = World->GetGameState<AZGPGameState>();
 	if (!GameState) return EBTNodeResult::Failed;
@@ -30,17 +27,14 @@ EBTNodeResult::Type UBTTask_RequestToken::ExecuteTask(UBehaviorTreeComponent& Ow
 	UTokenManagerComponent* TokenManagerComponent = GameState->GetTokenComponent();
 	if (!TokenManagerComponent) return EBTNodeResult::Failed;
 
-	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
-	if (!BB) return EBTNodeResult::Failed;
-
-	if (TokenManagerComponent->HasToken(MyPawn))
+	if (TokenManagerComponent->HasToken(Context.Pawn))
 	{
-		BB->SetValueAsBool(AIKeys::HasToken, true);
+		Context.BB->SetValueAsBool(AIKeys::HasToken, true);
 		return EBTNodeResult::Succeeded;
 	}
 
-	bool Success = TokenManagerComponent->RequestToken(MyPawn, ETokenPriority::NORMAL);
-	BB->SetValueAsBool(AIKeys::HasToken, Success);
+	bool Success = TokenManagerComponent->RequestToken(Context.Pawn, ETokenPriority::NORMAL);
+	Context.BB->SetValueAsBool(AIKeys::HasToken, Success);
 
 	return Success ? EBTNodeResult::Succeeded : EBTNodeResult::Failed;
 }

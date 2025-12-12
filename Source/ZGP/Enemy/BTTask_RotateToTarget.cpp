@@ -14,19 +14,10 @@ UBTTask_RotateToTarget::UBTTask_RotateToTarget()
 
 EBTNodeResult::Type UBTTask_RotateToTarget::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	AAIController* AIController = OwnerComp.GetAIOwner();
-	if (!AIController) return EBTNodeResult::Failed;
+	FBTContext Context;
+	if (!GetBTContext(OwnerComp, Context, true)) return EBTNodeResult::Failed;
 
-	APawn* MyPawn = AIController->GetPawn();
-	if (!MyPawn) return EBTNodeResult::Failed;
-
-	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
-	if (!BB) return EBTNodeResult::Failed;
-
-	AActor* Target = Cast<AActor>(BB->GetValueAsObject(AIKeys::TargetActor));
-	if (!Target) return EBTNodeResult::Failed;
-
-	if (UpdateRotation(MyPawn, Target, 0.f))
+	if (UpdateRotation(Context.Pawn, Context.Target, 0.f))
 	{
 		return EBTNodeResult::Succeeded;
 	}

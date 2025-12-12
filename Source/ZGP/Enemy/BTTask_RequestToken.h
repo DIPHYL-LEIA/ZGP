@@ -4,11 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTTaskNode.h"
+#include "BTTask_Base.h"
 #include "BTTask_RequestToken.generated.h"
 
 
 UCLASS()
-class ZGP_API UBTTask_RequestToken : public UBTTaskNode
+class ZGP_API UBTTask_RequestToken : public UBTTask_Base
 {
 	GENERATED_BODY()
 	
