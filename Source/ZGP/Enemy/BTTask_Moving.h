@@ -12,7 +12,8 @@ enum class EMoveType : uint8
 	MOVE_AWAY		UMETA(DisplayName = "Move Away"),
 	STRAFE_LEFT		UMETA(DisplayName = "Strafe Left"),
 	STRAFE_RIGHT	UMETA(DisplayName = "Strafe Right"),
-	STRAFE_RANDOM	UMETA(DisplayName = "Strafe Random")
+	STRAFE_RANDOM	UMETA(DisplayName = "Strafe Random"),
+	ROAMING			UMETA(DisplayName = "Roaming")
 };
 
 UCLASS()
@@ -40,6 +41,13 @@ protected:
 	// Strafe : 타겟 기준 이동 각
 	UPROPERTY(EditAnywhere, Category = "Strafe", meta = (ClampMin = "15.0"))
 	float m_fStrafeAngle = 45.f;
+	
+	// Roaming
+	UPROPERTY(EditAnywhere, Category = "Roaming", meta = (ClampMin = "100.0"))
+	float m_fRoamingMinRadius = 200.f;
+
+	UPROPERTY(EditAnywhere, Category = "Roaming", meta = (ClampMin = "100.0"))
+	float m_fRoamingMaxRadius = 500.f;
 
 	// 이동 속도 배율(1.0 = 원래 속도)
 	UPROPERTY(EditAnywhere, Category = "Strafe", meta = (ClampMin = "0.1", ClampMax = "2.0"))
@@ -55,6 +63,7 @@ private:
 	FVector CalculateDestination(APawn* Pawn, const AActor* Target) const;
 	FVector CalculateMoveAwayLocation(APawn* Pawn, const AActor* Target) const;
 	FVector CalculateStrafeLocation(APawn* Pawn, const AActor* Target) const;
+	FVector CalculateRoamingLocation(APawn* Pawn) const;
 
 	void ApplySpeedMultiply(APawn* Pawn);
 	void RestoreSpeed(APawn* Pawn);

@@ -18,11 +18,21 @@ UBTTask_Moving::UBTTask_Moving()
 
 EBTNodeResult::Type UBTTask_Moving::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	FBTContext Context;
-	if (!GetBTContext(OwnerComp, Context, true)) return EBTNodeResult::Failed;
+	// Roaming은 타겟 불필요
+	bool bRequireTarget = (m_eMoveType != EMoveType::ROAMING);
 
+	FBTContext Context;
+	if (!GetBTContext(OwnerComp, Context, bRequireTarget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Moving: Context Failed"));
+		return EBTNodeResult::Failed;
+
+	}
 	// 타겟 응시
-	Context.Controller->SetFocus(Context.Target);
+	if (m_eMoveType != EMoveType::ROAMING && Context.Target)
+	{
+		Context.Controller->SetFocus(Context.Target);
+	}
 
 	FVector Destination = CalculateDestination(Context.Pawn, Context.Target);
 	if (Destination.IsZero())
@@ -39,15 +49,19 @@ EBTNodeResult::Type UBTTask_Moving::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 		{
 			FNavLocation NavLocation;
 
-			bool bFound = NavSystem->ProjectPointToNavigation(Destination, NavLocation, FVector(100.f, 100.f, 50.f));
+			bool bFound = NavSystem->ProjectPointToNavigation(Destination, NavLocation, FVector(500.f, 500.f, 200.f));
 			if (bFound)
 			{
 				Destination = NavLocation.Location;
 			}
 			else
 			{
-				Context.Controller->ClearFocus(EAIFocusPriority::Gameplay);
-				return EBTNodeResult::Failed;
+				// 실패해도 Roaming은 계속
+				if (m_eMoveType != EMoveType::ROAMING)
+				{
+					Context.Controller->ClearFocus(EAIFocusPriority::Gameplay);
+					return EBTNodeResult::Failed;
+				}
 			}
 		}
 	}
@@ -55,8 +69,11 @@ EBTNodeResult::Type UBTTask_Moving::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 	// 이동 속도
 	ApplySpeedMultiply(Context.Pawn);
 
+	// Roaming은 Strafe 없이 일반 이동
+	bool bCanStrafe = (m_eMoveType != EMoveType::ROAMING);
+
 	// 이동
-	EPathFollowingRequestResult::Type Result = Context.Controller->MoveToLocation(Destination, m_fAllowRadius, true, true, false, true, nullptr, true);
+	EPathFollowingRequestResult::Type Result = Context.Controller->MoveToLocation(Destination, m_fAllowRadius, true, true, false, bCanStrafe, nullptr, true);
 
 	if (Result == EPathFollowingRequestResult::Failed)
 	{
@@ -74,6 +91,7 @@ EBTNodeResult::Type UBTTask_Moving::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 
 	m_fElapsedTime = 0.f;
 
+	UE_LOG(LogTemp, Log, TEXT("Moving: Started Successfully"));
 	return EBTNodeResult::InProgress;
 }
 
@@ -94,7 +112,7 @@ void UBTTask_Moving::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 		return;
 	}
-	
+
 	EPathFollowingStatus::Type Status = Context.Controller->GetMoveStatus();
 	if (Status == EPathFollowingStatus::Idle)
 	{
@@ -124,12 +142,16 @@ void UBTTask_Moving::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* No
 
 FVector UBTTask_Moving::CalculateDestination(APawn* Pawn, const AActor* Target) const
 {
-	if (m_eMoveType == EMoveType::MOVE_AWAY)
+	switch (m_eMoveType)
 	{
+	case EMoveType::MOVE_AWAY:
 		return CalculateMoveAwayLocation(Pawn, Target);
+	case EMoveType::ROAMING:
+		return CalculateRoamingLocation(Pawn);
+	default:
+		return CalculateStrafeLocation(Pawn, Target);
 	}
 
-	return CalculateStrafeLocation(Pawn, Target);
 }
 
 FVector UBTTask_Moving::CalculateMoveAwayLocation(APawn* Pawn, const AActor* Target) const
@@ -167,6 +189,9 @@ FVector UBTTask_Moving::CalculateStrafeLocation(APawn* Pawn, const AActor* Targe
 	Direction.Z = 0.f;
 
 	float CurrentDistance = Direction.Size();
+	float MinCombatDistance = 400.f;
+	float TargetDistance = FMath::Max(CurrentDistance, MinCombatDistance);
+
 	if (CurrentDistance < KINDA_SMALL_NUMBER)
 	{
 		CurrentDistance = 300.f;
@@ -201,9 +226,26 @@ FVector UBTTask_Moving::CalculateStrafeLocation(APawn* Pawn, const AActor* Targe
 
 	// 타겟에서 회전된 방향으로 현재 거리만큼 떨어진 위치
 	FVector MoveLocation;
-	MoveLocation = TargetLocation + (RotateDirection * CurrentDistance);
+	MoveLocation = TargetLocation + (RotateDirection * TargetDistance);
 
 	return MoveLocation;
+}
+
+FVector UBTTask_Moving::CalculateRoamingLocation(APawn* Pawn) const
+{
+	if (!Pawn) return FVector::ZeroVector;
+
+	FVector MyLocation = Pawn->GetActorLocation();
+
+	float RandomAngle = FMath::FRandRange(0.f, 2.f * PI);
+	float RandomDistance = FMath::FRandRange(m_fRoamingMinRadius, m_fRoamingMaxRadius);
+
+	FVector Offset;
+	Offset.X = FMath::Cos(RandomAngle) * RandomDistance;
+	Offset.Y = FMath::Sin(RandomAngle) * RandomDistance;
+	Offset.Z = 0.f;
+
+	return MyLocation + Offset;
 }
 
 void UBTTask_Moving::ApplySpeedMultiply(APawn* Pawn)
