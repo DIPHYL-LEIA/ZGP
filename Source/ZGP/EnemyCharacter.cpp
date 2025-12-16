@@ -7,9 +7,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
-#include "Enemy/EnemyAIController.h"
-#include "AIController.h"
-
 #include "HealthComponent.h"
 #include "ActionStateProvider.h"
 #include "ActionState.h"

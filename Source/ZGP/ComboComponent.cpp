@@ -21,27 +21,22 @@ void UComboComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 생성 시점 확인 필요
-	AActor* Owner = GetOwner();
-	if (Owner)
-	{
-		ActionStateProvider = Cast<IActionStateProvider>(Owner);
-	}
 }
 
 void UComboComponent::RequestComboAttack()
 {
-	if (ActionStateProvider == nullptr) return;
+	IActionStateProvider* Provider = GetActionStateProvider();
+	if (Provider == nullptr) return;
 
 	// Combo Start (0 -> 1)
 	if (m_nCurrentComboStep == 0)
 	{
-		if (ActionStateProvider->CanChangeActionState(EActionState::ATTACKING))
+		if (Provider->CanChangeActionState(EActionState::ATTACKING))
 		{
 			m_nCurrentComboStep = 1;
 			m_bIsComboWindowStart = false;
 
-			ActionStateProvider->SetActionState(EActionState::ATTACKING);
+			Provider->SetActionState(EActionState::ATTACKING);
 
 			// Skill Component에 Broadcast
 			OnPerformComboAttack.Broadcast(m_nCurrentComboStep);
@@ -91,13 +86,20 @@ void UComboComponent::ResetCombo()
 		World->GetTimerManager().ClearTimer(ComboResetTimer);
 	}
 
-	if (ActionStateProvider && ActionStateProvider->IsActionState(EActionState::ATTACKING))
+	IActionStateProvider* Provider = GetActionStateProvider();
+
+	if (Provider && Provider->IsActionState(EActionState::ATTACKING))
 	{
-		if (ActionStateProvider->CanChangeActionState(EActionState::IDLE))
+		if (Provider->CanChangeActionState(EActionState::IDLE))
 		{
-			ActionStateProvider->SetActionState(EActionState::IDLE);
+			Provider->SetActionState(EActionState::IDLE);
 		}
 	}
+}
+
+IActionStateProvider* UComboComponent::GetActionStateProvider() const
+{
+	return Cast<IActionStateProvider>(GetOwner());
 }
 
 void UComboComponent::HandleComboReset()

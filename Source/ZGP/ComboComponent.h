@@ -28,8 +28,6 @@ protected:
 
 	FTimerHandle ComboResetTimer;
 
-	class IActionStateProvider* ActionStateProvider;
-
 public:
 	UPROPERTY(BlueprintAssignable, Category = "Combo")
 	FOnPerformComboAttack	OnPerformComboAttack;
@@ -49,6 +47,7 @@ public:
 	void ResetCombo();
 
 private:
+	class IActionStateProvider* GetActionStateProvider() const;
 	void HandleComboReset();
 
 };
