@@ -161,6 +161,17 @@ void AEnemyAIController::ClearTarget()
 
 void AEnemyAIController::HandleActionStateChange(EActionState OldState, EActionState NewState)
 {
+	UBlackboardComponent* BB = GetBlackboardComponent();
+	if (!BB) return;
+
+	if (NewState == EActionState::DAZED ||
+		NewState == EActionState::HIT ||
+		NewState == EActionState::DEAD)
+	{
+		StopMovement();
+	}
+
+	BB->SetValueAsEnum(TEXT("ActionState"), static_cast<uint8>(NewState));
 
 }
 
