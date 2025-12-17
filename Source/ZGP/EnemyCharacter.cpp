@@ -44,7 +44,7 @@ bool AEnemyCharacter::IsTargetable_Implementation() const
 
 FVector AEnemyCharacter::GetTargetLocation_Implementation() const
 {
-	return GetMesh()->GetSocketLocation(TEXT("spine_05"));
+	return GetMesh()->GetSocketLocation(TEXT("Humanoid_-Spine2"));
 }
 
 void AEnemyCharacter::OnTargeted_Implementation(bool IsTargeted)

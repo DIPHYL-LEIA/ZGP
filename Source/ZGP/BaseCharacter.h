@@ -34,6 +34,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAttributeAnomalyComponent> m_pAttributeAnomalyComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UCombatComponent> m_pCombatComponent;
+
 	UFUNCTION()
 	void HandlePlayMontage(UAnimMontage* MontagePlay);
 

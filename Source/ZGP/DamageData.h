@@ -6,6 +6,17 @@
 #include "AttributeType.h"
 #include "DamageData.generated.h"
 
+UENUM(BlueprintType)
+enum class EHitReactionType :uint8
+{
+	NONE		UMETA(DisplayName = "None"),
+	LIGHT		UMETA(DisplayName = "Light"),
+	MEDIUM		UMETA(DisplayName = "Medium"),
+	HEAVY		UMETA(DisplayName = "Heavy"),
+	LAUNCH		UMETA(DisplayName = "Launch"),
+	KNOCKDOWN	UMETA(DisplayName = "Knockdown")
+};
+
 USTRUCT(BlueprintType)
 struct FDamageData
 {
@@ -26,5 +37,16 @@ struct FDamageData
 	// 공격자 정보
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
 	TWeakObjectPtr<AActor> Attacker;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
+	EHitReactionType HitReaction = EHitReactionType::LIGHT;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
+	FVector HitDirection = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
+	FVector HitLocation = FVector::ZeroVector;
+
+
 
 };

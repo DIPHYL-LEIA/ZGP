@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AIController.h"
 #include "../TargetProvider.h"
+#include "../ActionState.h"
 #include "EnemyAIController.generated.h"
 
 /**
@@ -33,6 +34,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	TObjectPtr<class UBehaviorTree> m_pBehaviorTree;
@@ -50,10 +52,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "AI Targeting")
 	bool m_bUseMaxAggroRange = false;
 
+	UFUNCTION()
+	void HandleActionStateChange(EActionState OldState, EActionState NewState);
+
 private:
 	// Target
 	TWeakObjectPtr<AActor> m_pCachedTarget;
 	float m_fSearchCooldownTimer = 0.f;
 	bool IsTargetValid(AActor* Target) const;
+
+	TWeakObjectPtr<class UActionStateComponent> m_pActionStateComponent;
 
 };

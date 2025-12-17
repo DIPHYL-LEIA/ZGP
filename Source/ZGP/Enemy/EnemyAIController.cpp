@@ -9,6 +9,8 @@
 #include "Engine/World.h"
 #include "Engine/OverlapResult.h"
 
+#include "../ActionStateComponent.h"		// 바인딩 해제용
+
 AEnemyAIController::AEnemyAIController()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -36,10 +38,36 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 
 	ClearTarget();
 
+	if (InPawn)
+	{
+		if (UActionStateComponent* ActionStateComponent = InPawn->FindComponentByClass<UActionStateComponent>())
+		{
+			ActionStateComponent->OnStateChanged.AddDynamic(this, &AEnemyAIController::HandleActionStateChange);
+			m_pActionStateComponent = ActionStateComponent;
+		}
+	}
+
 	if (m_pBehaviorTree)
 	{
 		RunBehaviorTree(m_pBehaviorTree);
+
+		if (UBlackboardComponent* BlackboardComponent = GetBlackboardComponent())
+		{
+			BlackboardComponent->SetValueAsEnum(TEXT("ActionState"), static_cast<uint8>(EActionState::IDLE));
+		}
 	}
+}
+
+void AEnemyAIController::OnUnPossess()
+{
+	// 델리게이트 해제
+	if (m_pActionStateComponent.IsValid())
+	{
+		m_pActionStateComponent->OnStateChanged.RemoveDynamic(this, &AEnemyAIController::HandleActionStateChange);
+		m_pActionStateComponent.Reset();
+	}
+
+	Super::OnUnPossess();
 }
 
 
@@ -129,6 +157,11 @@ void AEnemyAIController::ClearTarget()
 {
 	m_pCachedTarget.Reset();
 	m_fSearchCooldownTimer = 0.f;
+}
+
+void AEnemyAIController::HandleActionStateChange(EActionState OldState, EActionState NewState)
+{
+
 }
 
 bool AEnemyAIController::IsTargetValid(AActor* Target) const

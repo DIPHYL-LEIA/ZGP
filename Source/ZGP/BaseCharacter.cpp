@@ -9,6 +9,7 @@
 #include "SkillComponent.h"
 #include "HealthComponent.h"
 #include "AttributeAnomalyComponent.h"
+#include "CombatComponent.h"
 
 
 // Sets default values
@@ -20,6 +21,7 @@ ABaseCharacter::ABaseCharacter()
 	m_pSkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
 	m_pHealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	m_pAttributeAnomalyComponent = CreateDefaultSubobject<UAttributeAnomalyComponent>(TEXT("AttributeAnomalyComponent"));
+	m_pCombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 }
 
 void ABaseCharacter::BeginPlay()
