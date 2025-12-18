@@ -53,6 +53,9 @@ bool UActionStateComponent::CanChangeActionState(EActionState NewState) const
 		return false;
 	}
 
+	if (m_currentState == EActionState::DAZED && NewState == EActionState::IDLE)
+		return true;
+
 	// 공격/회피 후 Idle 상태로 전환 가능 처리
 	if (NewState == EActionState::IDLE && IsTemporaryState())
 		return true;

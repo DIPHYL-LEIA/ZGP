@@ -25,6 +25,8 @@ void UEnemyDazeComponent::InitializeComponent()
 
 void UEnemyDazeComponent::TakeDaze(float Value)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[DazeComp] TakeDaze - Value: %.1f, m_bIsDazed: %s, CurrentDaze: %.1f"),
+		Value, m_bIsDazed ? TEXT("true") : TEXT("false"), m_fCurrentDaze);
 	if (m_bIsDazed || Value <= 0.f) return;
 
 	m_fCurrentDaze = FMath::Clamp(m_fCurrentDaze + Value, 0.f, m_fMaxDaze);

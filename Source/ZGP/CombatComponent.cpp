@@ -91,8 +91,15 @@ void UCombatComponent::ExecuteTrace(const FVector& Start, const FVector& End, fl
 void UCombatComponent::ApplyDamage(AActor* Target, const FAttackData& AttackData, const FHitResult& HitResult)
 {
 	if (!Target) return;
-	if (!Target->Implements<UCombatInteraction>()) return;
 
+	UE_LOG(LogTemp, Warning, TEXT("[CombatComp] ApplyDamage Target: %s, Class: %s"),
+		*Target->GetName(), *Target->GetClass()->GetName());
+
+	if (!Target->Implements<UCombatInteraction>())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[CombatComp] Target does not implement ICombatInteraction"));
+		return;
+	}
 	AActor* Owner = GetOwner();
 
 	FDamageData DamageData;

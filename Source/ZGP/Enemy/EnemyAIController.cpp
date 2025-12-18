@@ -164,6 +164,7 @@ void AEnemyAIController::HandleActionStateChange(EActionState OldState, EActionS
 	UBlackboardComponent* BB = GetBlackboardComponent();
 	if (!BB) return;
 
+	BB->SetValueAsEnum(TEXT("ActionState"), static_cast<uint8>(NewState));
 	if (NewState == EActionState::DAZED ||
 		NewState == EActionState::HIT ||
 		NewState == EActionState::DEAD)
@@ -171,11 +172,7 @@ void AEnemyAIController::HandleActionStateChange(EActionState OldState, EActionS
 		StopMovement();
 	}
 
-	BB->SetValueAsEnum(TEXT("ActionState"), static_cast<uint8>(NewState));
 
-	BB->SetValueAsBool(TEXT("IsDead"), NewState == EActionState::DEAD);
-	BB->SetValueAsBool(TEXT("IsDazed"), NewState == EActionState::DAZED);
-	BB->SetValueAsBool(TEXT("IsHurt"), NewState == EActionState::HIT);
 }
 
 bool AEnemyAIController::IsTargetValid(AActor* Target) const
