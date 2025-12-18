@@ -173,6 +173,9 @@ void AEnemyAIController::HandleActionStateChange(EActionState OldState, EActionS
 
 	BB->SetValueAsEnum(TEXT("ActionState"), static_cast<uint8>(NewState));
 
+	BB->SetValueAsBool(TEXT("IsDead"), NewState == EActionState::DEAD);
+	BB->SetValueAsBool(TEXT("IsDazed"), NewState == EActionState::DAZED);
+	BB->SetValueAsBool(TEXT("IsHurt"), NewState == EActionState::HIT);
 }
 
 bool AEnemyAIController::IsTargetValid(AActor* Target) const
