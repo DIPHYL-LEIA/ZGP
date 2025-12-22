@@ -141,6 +141,22 @@ void ABaseCharacter::Parried_Implementation(AActor* Character)
 {
 }
 
+void ABaseCharacter::BeginAttack_Implementation()
+{
+	if (m_pCombatComponent)
+	{
+		m_pCombatComponent->BeginAttack();
+	}
+}
+
+void ABaseCharacter::EndAttack_Implementation()
+{
+	if (m_pCombatComponent)
+	{
+		m_pCombatComponent->EndAttack();
+	}
+}
+
 
 UActionStateComponent* ABaseCharacter::GetActionStateComponent() const
 {

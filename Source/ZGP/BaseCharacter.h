@@ -6,10 +6,11 @@
 #include "GameFramework/Character.h"
 #include "ActionStateProvider.h"
 #include "CombatInteraction.h"
+#include "CombatAction.h"
 #include "BaseCharacter.generated.h"
 
 UCLASS()
-class ZGP_API ABaseCharacter : public ACharacter, public IActionStateProvider, public ICombatInteraction
+class ZGP_API ABaseCharacter : public ACharacter, public IActionStateProvider, public ICombatInteraction, public ICombatAction
 {
 	GENERATED_BODY()
 
@@ -48,13 +49,19 @@ public:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	// ActionStateProvider
 	virtual bool CanChangeActionState(EActionState NewState) const override;
 	virtual void SetActionState(EActionState NewState) override;
 	virtual bool IsActionState(EActionState State) const override;
 
+	// CombatInteraction
 	virtual void ApplyCombatEffect_Implementation(const FDamageData& DamageData) override;
 	virtual bool CanParry_Implementation() const override;
 	virtual void Parried_Implementation(AActor* Character) override;
+
+	// CombatAction
+	virtual void BeginAttack_Implementation() override;
+	virtual void EndAttack_Implementation() override;
 
 	UActionStateComponent* GetActionStateComponent() const;
 	UHealthComponent* GetHealthComponent() const;
