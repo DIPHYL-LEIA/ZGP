@@ -18,7 +18,7 @@ EBTNodeResult::Type UBTTask_RequestToken::ExecuteTask(UBehaviorTreeComponent& Ow
 	FBTContext Context;
 	if (!GetBTContext(OwnerComp, Context, false)) return EBTNodeResult::Failed;
 
-	UWorld* World = GetWorld();
+	UWorld* World = Context.Pawn->GetWorld();
 	if (!World) return EBTNodeResult::Failed;
 
 	AZGPGameState* GameState = World->GetGameState<AZGPGameState>();
