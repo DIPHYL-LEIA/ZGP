@@ -38,11 +38,17 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UCombatComponent> m_pCombatComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UHitReactionComponent> m_pHitReactionComponent;
+
 	UFUNCTION()
 	void HandlePlayMontage(UAnimMontage* MontagePlay);
 
 	UFUNCTION()
 	void HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
+	void HandleHitReactionEnd();
 
 public:
 	virtual void Tick(float DeltaTime) override;

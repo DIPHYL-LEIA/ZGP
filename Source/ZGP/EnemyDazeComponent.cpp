@@ -60,6 +60,8 @@ void UEnemyDazeComponent::RecoverDaze()
 
 	OnDazeRecovered.Broadcast();
 	UE_LOG(LogTemp, Log, TEXT("Daze State : RECOVERED"));
+	UE_LOG(LogTemp, Warning, TEXT("[DazeComp] === RECOVERED === m_bIsDazed now: %s, CurrentDaze: %.1f"),
+		m_bIsDazed ? TEXT("true") : TEXT("false"), m_fCurrentDaze);
 
 	// UI 초기화용 수치 변화 방송
 	OnDazeChanged.Broadcast(m_fCurrentDaze, m_fMaxDaze);

@@ -10,6 +10,7 @@
 #include "HealthComponent.h"
 #include "AttributeAnomalyComponent.h"
 #include "CombatComponent.h"
+#include "HitReactionComponent.h"
 
 
 // Sets default values
@@ -22,6 +23,7 @@ ABaseCharacter::ABaseCharacter()
 	m_pHealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	m_pAttributeAnomalyComponent = CreateDefaultSubobject<UAttributeAnomalyComponent>(TEXT("AttributeAnomalyComponent"));
 	m_pCombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	m_pHitReactionComponent = CreateDefaultSubobject<UHitReactionComponent>(TEXT("HitReactionComponent"));
 }
 
 void ABaseCharacter::BeginPlay()
@@ -31,6 +33,10 @@ void ABaseCharacter::BeginPlay()
 	if (m_pSkillComponent)
 	{
 		m_pSkillComponent->OnRequestPlayMontage.AddDynamic(this, &ABaseCharacter::HandlePlayMontage);
+	}
+	if (m_pHitReactionComponent)
+	{
+		m_pHitReactionComponent->OnHitReactionEnd.AddDynamic(this, &ABaseCharacter::HandleHitReactionEnd);
 	}
 }
 
@@ -70,6 +76,14 @@ void ABaseCharacter::HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted
 		{
 			SetActionState(EActionState::IDLE);
 		}
+	}
+}
+
+void ABaseCharacter::HandleHitReactionEnd()
+{
+	if (IsActionState(EActionState::HIT))
+	{
+		SetActionState(EActionState::IDLE);
 	}
 }
 
@@ -126,9 +140,10 @@ void ABaseCharacter::ApplyCombatEffect_Implementation(const FDamageData& DamageD
 		m_pAttributeAnomalyComponent->TakeAnomalyDamage(DamageData.AnomalyValue, DamageData.AnomalyType);
 	}
 
-	if (CanChangeActionState(EActionState::HIT))
+	if (m_pHitReactionComponent && CanChangeActionState(EActionState::HIT))
 	{
 		SetActionState(EActionState::HIT);
+		m_pHitReactionComponent->RunHitReaction(DamageData);
 	}
 }
 

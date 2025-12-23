@@ -62,7 +62,7 @@ private:
 	void PlayHitMontage(EHitReactionType ReactionType, EHitDirection Direction);
 	void ApplyKnockback(const FVector& HitDirection, EHitReactionType ReactionType);
 
-	static FName GetSectionName(EHitReactionType Direction);
+	static FName GetSectionName(EHitDirection Direction);
 
 	UFUNCTION()
 	void HandleMontageEnd(UAnimMontage* Montage, bool bInterrupted);
