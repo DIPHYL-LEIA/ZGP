@@ -57,6 +57,12 @@ AZGPPlayerController::AZGPPlayerController()
 		IA_LockOn = LockOnActionAsset.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UInputAction> DodgeAsset(TEXT("/Game/ZGProject/ZGPInput/ia-dodge.ia-dodge"));
+	if (DodgeAsset.Succeeded())
+	{
+		IA_Dodge = DodgeAsset.Object;
+	}
+
 	// Input Mapping Context
 	static ConstructorHelpers::FObjectFinder<UInputMappingContext> DefaultMappingContextAsset(TEXT("/Game/ZGProject/ZGPInput/imc-default.imc-default"));
 	if (DefaultMappingContextAsset.Succeeded())
@@ -194,6 +200,12 @@ void AZGPPlayerController::SetupInputComponent()
 		{
 			EnhancedInputComponent->BindAction(IA_LockOn, ETriggerEvent::Started, this, &AZGPPlayerController::HandleLockOn);
 		}
+
+		// Dodge ¹ÙÀÎµù
+		if (IA_Dodge)
+		{
+			EnhancedInputComponent->BindAction(IA_Dodge, ETriggerEvent::Started, this, &AZGPPlayerController::HandleDodge);
+		}
 	}
 }
 
@@ -243,6 +255,14 @@ void AZGPPlayerController::HandleStopJumping()
 	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
 	{
 		ControlledCharacter->StopJumping();
+	}
+}
+
+void AZGPPlayerController::HandleDodge()
+{
+	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
+	{
+		ControlledCharacter->RequestDodge();
 	}
 }
 

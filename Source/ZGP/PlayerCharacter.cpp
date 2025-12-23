@@ -15,6 +15,7 @@
 
 #include "ComboComponent.h"
 #include "SkillComponent.h"
+#include "DodgeComponent.h"
 
 APlayerCharacter::APlayerCharacter()
 {
@@ -45,8 +46,9 @@ APlayerCharacter::APlayerCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
 
-	// Combo Component
+	// Component
 	m_pComboComp = CreateDefaultSubobject<UComboComponent>(TEXT("ComboComponent"));
+	m_pDodgeComp = CreateDefaultSubobject<UDodgeComponent>(TEXT("DodgeComponent"));
 }
 
 void APlayerCharacter::BeginPlay()
@@ -165,6 +167,34 @@ void APlayerCharacter::OnTargeted_Implementation(bool IsTargeted)
 
 void APlayerCharacter::OnUnTargeted_Implementation()
 {
+}
+
+void APlayerCharacter::ApplyCombatEffect_Implementation(const FDamageData& DamageData)
+{
+	if (m_pDodgeComp && m_pDodgeComp->IsInvincible())
+	{
+		m_pDodgeComp->TryPerfectDodgeTrigger();
+		return;
+	}
+
+	Super::ApplyCombatEffect_Implementation(DamageData);
+}
+
+void APlayerCharacter::RequestDodge()
+{
+	if (!m_pDodgeComp) return;
+
+	FVector DodgeDirection = FVector::ZeroVector;
+
+	if (Controller)
+	{
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+		DodgeDirection = GetLastMovementInputVector();
+	}
+
+	m_pDodgeComp->RequestDodge(DodgeDirection);
 }
 
 

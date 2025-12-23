@@ -54,6 +54,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> IA_LockOn;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> IA_Dodge;
+
 	// Tag
 	UPROPERTY(EditDefaultsOnly, Category = "Tag")
 	TArray<TSubclassOf<class APlayerCharacter>> m_arTagCharacter;
@@ -67,9 +70,11 @@ protected:
 	void HandleLook(const FInputActionValue& Value);
 	void HandleJump();
 	void HandleStopJumping();
+	void HandleDodge();
 
 	void HandleAttack();
 	void HandleTag();
 	void HandleLockOn();
+
 
 };

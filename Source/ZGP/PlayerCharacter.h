@@ -35,6 +35,10 @@ public:
 	virtual void OnTargeted_Implementation(bool IsTargeted) override;
 	virtual void OnUnTargeted_Implementation() override;
 
+	// Dodge
+	virtual void ApplyCombatEffect_Implementation(const FDamageData& DamageData) override;
+	void RequestDodge();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -47,5 +51,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UComboComponent> m_pComboComp;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UDodgeComponent> m_pDodgeComp;
 
 };
