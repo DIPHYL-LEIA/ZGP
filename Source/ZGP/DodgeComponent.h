@@ -6,6 +6,15 @@
 #include "Components/ActorComponent.h"
 #include "DodgeComponent.generated.h"
 
+UENUM(BlueprintType)
+enum class EDodgeDirection : uint8
+{
+	FORWARD		UMETA(DisplayName = "Forward"),
+	BACKWARD	UMETA(DisplayName = "Backward"),
+	LEFT		UMETA(DisplayName = "Left"),
+	RIGHT		UMETA(DisplayName = "Right")
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDodgeStart);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDodgeEnd);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPerfectDodge);
@@ -37,7 +46,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Dodge")
 	void SetPerfectDodgeWindow(bool bActive);
 
-	// 적 공격이 들어왔을 때 호출
+	// Perfect Dodge 판정
 	UFUNCTION(BlueprintCallable, Category = "Dodge")
 	bool TryPerfectDodgeTrigger();
 
@@ -63,14 +72,16 @@ protected:
 	float m_fDodgeCooldown = 0.3f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
-	float m_fPerfectDodgeSlowDuration = 0.5f;
+	float m_fPerfectDodgeSlowDuration = 1.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
 	float m_fPerfectDodgeSlowRate = 0.1f;
 
 private:
 	void ExecuteDodge(const FVector& Direction);
-	void ApplyDodge(const FVector& Direction);
+
+	EDodgeDirection CalculateDodgeDirection(const FVector& InputDirection) const;
+	static FName GetDodgeSectionName(EDodgeDirection Direction);
 
 	UFUNCTION()
 	void HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted);

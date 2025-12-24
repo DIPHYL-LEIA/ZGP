@@ -171,9 +171,20 @@ void APlayerCharacter::OnUnTargeted_Implementation()
 
 void APlayerCharacter::ApplyCombatEffect_Implementation(const FDamageData& DamageData)
 {
+	UE_LOG(LogTemp, Log, TEXT("[Player] Hit Received! Invincible: %d"),
+		(m_pDodgeComp && m_pDodgeComp->IsInvincible()));
+	//if (m_pDodgeComp && m_pDodgeComp->IsInvincible())
+	//{
+	//	m_pDodgeComp->TryPerfectDodgeTrigger();
+	//	return;
+	//}
 	if (m_pDodgeComp && m_pDodgeComp->IsInvincible())
 	{
-		m_pDodgeComp->TryPerfectDodgeTrigger();
+		bool bSuccess = m_pDodgeComp->TryPerfectDodgeTrigger();
+		if (bSuccess)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Player] Perfect Dodge executed!"));
+		}
 		return;
 	}
 
@@ -186,13 +197,7 @@ void APlayerCharacter::RequestDodge()
 
 	FVector DodgeDirection = FVector::ZeroVector;
 
-	if (Controller)
-	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		DodgeDirection = GetLastMovementInputVector();
-	}
+	DodgeDirection = GetLastMovementInputVector();						// ??
 
 	m_pDodgeComp->RequestDodge(DodgeDirection);
 }

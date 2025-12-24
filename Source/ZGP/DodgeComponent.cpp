@@ -25,7 +25,7 @@ bool UDodgeComponent::RequestDodge(const FVector& Direction)
 	UWorld* World = GetWorld();
 	if (!World) return false;
 
-	float CurrentTime = World->GetTimeSeconds();
+	float CurrentTime = World->GetRealTimeSeconds();
 	if (CurrentTime - m_fLastDodgeTime < m_fDodgeCooldown) return false;
 
 	IActionStateProvider* Provider = GetActionStateProvider();
@@ -52,8 +52,12 @@ void UDodgeComponent::SetPerfectDodgeWindow(bool bActive)
 
 bool UDodgeComponent::TryPerfectDodgeTrigger()
 {
+	UE_LOG(LogTemp, Log, TEXT("[Dodge] TryTrigger Called. Window: %d, IsDodging: %d"),
+		m_bPerfectDodgeWindowActive, m_bIsDodging);
 	if (!m_bPerfectDodgeWindowActive) return false;
 	if (!m_bIsDodging) return false;
+
+	UE_LOG(LogTemp, Warning, TEXT("[Dodge] Perfect Dodge TRIGGERED!"));
 
 	ActivateDodgeEffect();
 	OnPerfectDodge.Broadcast();
@@ -74,21 +78,23 @@ void UDodgeComponent::ExecuteDodge(const FVector& Direction)
 
 	OnDodgeStart.Broadcast();
 
-	FVector DodgeDirection = Direction;
-	if (DodgeDirection.IsNearlyZero())
-	{
-		// 회피 방향으로의 입력이 없으면 후방으로 이동
-		DodgeDirection = -Owner->GetActorForwardVector();
-	}
+	EDodgeDirection DodgeDirection = CalculateDodgeDirection(Direction);
 
-	DodgeDirection.Z = 0.f;
-	DodgeDirection.Normalize();
+	//FVector DodgeDirection = Direction;
+	//if (DodgeDirection.IsNearlyZero())
+	//{
+	//	// 회피 방향으로의 입력이 없으면 후방으로 이동
+	//	DodgeDirection = -Owner->GetActorForwardVector();
+	//}
 
-	FRotator TargetRotation = DodgeDirection.Rotation();
-	Owner->SetActorRotation(TargetRotation);
+	//DodgeDirection.Z = 0.f;
+	//DodgeDirection.Normalize();
 
-	// 이동 움직임 적용
-	ApplyDodge(DodgeDirection);
+	//FRotator TargetRotation = DodgeDirection.Rotation();
+	//Owner->SetActorRotation(TargetRotation);
+
+	//// 이동 움직임 적용
+	//ApplyDodge(DodgeDirection);
 
 	if (m_pDodgeMontage)
 	{
@@ -98,23 +104,55 @@ void UDodgeComponent::ExecuteDodge(const FVector& Direction)
 			AnimInstance->OnMontageEnded.RemoveDynamic(this, &UDodgeComponent::HandleMontageEnded);
 			AnimInstance->OnMontageEnded.AddDynamic(this, &UDodgeComponent::HandleMontageEnded);
 		}
-		Owner->PlayAnimMontage(m_pDodgeMontage);
+		FName SectionName = GetDodgeSectionName(DodgeDirection);
+		Owner->PlayAnimMontage(m_pDodgeMontage, 1.0f, SectionName);
 	}
 }
 
-void UDodgeComponent::ApplyDodge(const FVector& Direction)
+EDodgeDirection UDodgeComponent::CalculateDodgeDirection(const FVector& InputDirection) const
 {
-	// 회피 움직임
+	if (InputDirection.IsNearlyZero()) 
+		return EDodgeDirection::BACKWARD;
+
 	ACharacter* Owner = Cast<ACharacter>(GetOwner());
-	if (!Owner) return;
+	if (!Owner) return EDodgeDirection::BACKWARD;
 
-	UCharacterMovementComponent* MovementComponent = Owner->GetCharacterMovement();	
-	if (!MovementComponent) return;
+	// 카메라/컨트롤러 기준을 캐릭터 로컬 기준으로
+	const FVector Forward = Owner->GetActorForwardVector();
+	const FVector Right = Owner->GetActorRightVector();
 
-	// Root Motion 사용 시 생략 가능
-	FVector LaunchVelocity = Direction * m_fDodgeDistance;
-	Owner->LaunchCharacter(LaunchVelocity, true, true);
+	FVector InputXY = FVector(InputDirection.X, InputDirection.Y, 0.f).GetSafeNormal();
+	FVector ForwardXY = FVector(Forward.X, Forward.Y, 0.f).GetSafeNormal();
+	FVector RightXY = FVector(Right.X, Right.Y, 0.f).GetSafeNormal();
 
+	const float ForwardDot = FVector::DotProduct(ForwardXY, InputXY);
+	const float RightDot = FVector::DotProduct(RightXY, InputXY);
+
+	if (FMath::Abs(ForwardDot) >= FMath::Abs(RightDot))
+	{
+		return (ForwardDot > 0.f) ? EDodgeDirection::FORWARD : EDodgeDirection::BACKWARD;
+	}
+	else
+	{
+		return (RightDot > 0.f) ? EDodgeDirection::RIGHT : EDodgeDirection::LEFT;
+	}
+}
+
+FName UDodgeComponent::GetDodgeSectionName(EDodgeDirection Direction)
+{
+	switch (Direction)
+	{
+	case EDodgeDirection::FORWARD:
+		return FName("Forward");
+	case EDodgeDirection::BACKWARD:
+		return FName("Backward");
+	case EDodgeDirection::LEFT:
+		return FName("Left");
+	case EDodgeDirection::RIGHT:
+		return FName("Right");
+	default:
+		return FName("Forward");
+	}
 }
 
 void UDodgeComponent::HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted)
@@ -153,6 +191,12 @@ void UDodgeComponent::ActivateDodgeEffect()
 		m_fPerfectDodgeSlowDuration * m_fPerfectDodgeSlowRate, // 실제 시간 기준
 		false);
 
+	AActor* Owner = Cast<ACharacter>(GetOwner());
+	if (Owner)
+	{
+		// Global Time Dilation이 0.1인 경우 Custom Time Dilation을 10으로 적용하여 플레이어 속도 조정
+		Owner->CustomTimeDilation = 1.0f / m_fPerfectDodgeSlowRate;
+	}
 }
 
 void UDodgeComponent::DeActivateDodgeEffect()
@@ -161,6 +205,13 @@ void UDodgeComponent::DeActivateDodgeEffect()
 	if (!World) return;
 
 	UGameplayStatics::SetGlobalTimeDilation(World, 1.0f);
+
+	AActor* Owner = Cast<ACharacter>(GetOwner());
+	if (Owner)
+	{
+		Owner->CustomTimeDilation = 1.0f;
+	}
+
 }
 
 IActionStateProvider* UDodgeComponent::GetActionStateProvider() const
