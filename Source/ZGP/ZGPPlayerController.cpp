@@ -10,6 +10,7 @@
 #include "InputMappingContext.h"
 #include "InputAction.h"
 
+#include "ParryDetectorComponent.h"
 #include "SquadManagerComponent.h"
 #include "TargetingComponent.h"
 #include "Taggable.h"
@@ -21,6 +22,7 @@ AZGPPlayerController::AZGPPlayerController()
 	// Components
 	m_pSquadManagerComponent = CreateDefaultSubobject<USquadManagerComponent>(TEXT("SquadManagerComponent"));
 	m_pTargetingComponent = CreateDefaultSubobject<UTargetingComponent>(TEXT("TargetingComponent"));
+	m_pParryDetectorComponent = CreateDefaultSubobject<UParryDetectorComponent>(TEXT("ParryDetectorComponent"));
 
 	// Input Context
 	static ConstructorHelpers::FObjectFinder<UInputAction> MoveActionAsset(TEXT("/Game/ZGProject/ZGPInput/ia-move.ia-move"));
@@ -85,49 +87,53 @@ void AZGPPlayerController::BeginPlay()
 
 	if (m_pSquadManagerComponent == nullptr) return;
 
-	if (m_pSquadManagerComponent && m_arTagCharacter.Num() > 0)
+	if (m_pSquadManagerComponent)
 	{
+		m_pSquadManagerComponent->OnParryTagExecute.AddDynamic(this, &AZGPPlayerController::HandleParryTag);
 
-		APlayerCharacter* FirstCharacter = nullptr;
-		FVector CharacterLocation = FVector::ZeroVector;
-		FRotator CharacterRotation = FRotator::ZeroRotator;
-
-		// Player Start 위치 
-		if (AGameModeBase* GameMode = GetWorld()->GetAuthGameMode())
+		if (m_arTagCharacter.Num() > 0)
 		{
-			AActor* PlayerStart = GameMode->FindPlayerStart(this);
-			if (PlayerStart)
+			APlayerCharacter* FirstCharacter = nullptr;
+			FVector CharacterLocation = FVector::ZeroVector;
+			FRotator CharacterRotation = FRotator::ZeroRotator;
+
+			// Player Start 위치 
+			if (AGameModeBase* GameMode = GetWorld()->GetAuthGameMode())
 			{
-				CharacterLocation = PlayerStart->GetActorLocation();
-				CharacterRotation = PlayerStart->GetActorRotation();
-			}
-		}
-
-		if (GetPawn())
-		{
-			GetPawn()->Destroy();
-		}
-
-		for (int i = 0; i < m_arTagCharacter.Num(); ++i)
-		{
-			if (m_arTagCharacter[i])
-			{
-				APlayerCharacter* NewCharacter = GetWorld()->SpawnActor<APlayerCharacter>(m_arTagCharacter[i], CharacterLocation, CharacterRotation); //
-
-				if (NewCharacter)
+				AActor* PlayerStart = GameMode->FindPlayerStart(this);
+				if (PlayerStart)
 				{
-					m_pSquadManagerComponent->RegisterCharacter(NewCharacter);
+					CharacterLocation = PlayerStart->GetActorLocation();
+					CharacterRotation = PlayerStart->GetActorRotation();
+				}
+			}
 
-					if (i == 0)
-					{
-						FirstCharacter = NewCharacter;
-						Possess(FirstCharacter);
+			if (GetPawn())
+			{
+				GetPawn()->Destroy();
+			}
 
-						m_pSquadManagerComponent->InitActiveCharacter(FirstCharacter);
-					}
-					else
+			for (int i = 0; i < m_arTagCharacter.Num(); ++i)
+			{
+				if (m_arTagCharacter[i])
+				{
+					APlayerCharacter* NewCharacter = GetWorld()->SpawnActor<APlayerCharacter>(m_arTagCharacter[i], CharacterLocation, CharacterRotation); //
+
+					if (NewCharacter)
 					{
-						ITaggable::Execute_OnTagOut(NewCharacter);
+						m_pSquadManagerComponent->RegisterCharacter(NewCharacter);
+
+						if (i == 0)
+						{
+							FirstCharacter = NewCharacter;
+							Possess(FirstCharacter);
+
+							m_pSquadManagerComponent->InitActiveCharacter(FirstCharacter);
+						}
+						else
+						{
+							ITaggable::Execute_OnTagOut(NewCharacter);
+						}
 					}
 				}
 			}
@@ -266,6 +272,14 @@ void AZGPPlayerController::HandleDodge()
 	}
 }
 
+void AZGPPlayerController::HandleParryTag(APawn* NewActiveCharacter, AActor* ParriedEnemy)
+{
+	if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(NewActiveCharacter))
+	{
+		PlayerCharacter->RequestParryAttack(ParriedEnemy);
+	}
+}
+
 void AZGPPlayerController::HandleAttack()
 {
 	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
@@ -281,6 +295,32 @@ void AZGPPlayerController::HandleAttack()
 
 void AZGPPlayerController::HandleTag()
 {
+	// 1. 패리 가능하면 패리 우선
+	if (m_pParryDetectorComponent)
+	{
+		bool bCanParry = m_pParryDetectorComponent->CanParry();
+		UE_LOG(LogTemp, Warning, TEXT("[HandleTag] CanParry: %s"), bCanParry ? TEXT("TRUE") : TEXT("FALSE"));
+
+		if (bCanParry)
+		{
+			AActor* ParryTarget = m_pParryDetectorComponent->GetParryTarget();
+			UE_LOG(LogTemp, Warning, TEXT("[HandleTag] ParryTarget: %s"),
+				ParryTarget ? *ParryTarget->GetName() : TEXT("NULL"));
+
+			if (m_pParryDetectorComponent->ExecuteParry())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[HandleTag] ExecuteParry SUCCESS"));
+
+				if (m_pSquadManagerComponent)
+				{
+					m_pSquadManagerComponent->RequestParryTag(ParryTarget);
+				}
+				return;
+			}
+		}
+	}
+
+	// 2. 일반 태그
 	if (m_pSquadManagerComponent)
 	{
 		m_pSquadManagerComponent->RequestTag();

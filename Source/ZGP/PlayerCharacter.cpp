@@ -9,6 +9,7 @@
 #include "EnhancedInputComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "TimerManager.h"
 
 #include "ZGPPlayerController.h"
 #include "InputAction.h"
@@ -59,6 +60,79 @@ void APlayerCharacter::BeginPlay()
 	if (m_pComboComp && m_pSkillComponent)
 	{
 		m_pComboComp->OnPerformComboAttack.AddDynamic(m_pSkillComponent, &USkillComponent::ExecuteComboAttack);
+	}
+}
+
+void APlayerCharacter::HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->OnMontageEnded.RemoveDynamic(this, &APlayerCharacter::HandleActionMontageEnded);
+	}
+
+	if (m_bPendingTagOut)
+	{
+		ExecuteActionTagOut();
+	}
+}
+
+void APlayerCharacter::ExecuteActionTagOut()
+{
+	// 타이머 정리
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		World->GetTimerManager().ClearTimer(ForceTagOutTimerHandle);
+	}
+
+	// 델리게이트 정리
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->OnMontageEnded.RemoveDynamic(this, &APlayerCharacter::HandleActionMontageEnded);
+	}
+
+	m_bPendingTagOut = false;
+
+	// 상태 복원 후 숨김
+	SetActionTagOutState(false);
+
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+
+	SetActionState(EActionState::IDLE);
+
+	UE_LOG(LogTemp, Log, TEXT("[PlayerCharacter] : %s : Deferred Tag Out Complete"), *GetName());
+}
+
+void APlayerCharacter::SetActionTagOutState(bool bActive)
+{
+	if (bActive)
+	{
+		if (m_pDodgeComp)
+		{
+			m_pDodgeComp->SetInvincible(true);
+		}
+
+		UCapsuleComponent* Capsule = GetCapsuleComponent();
+		if (Capsule)
+		{
+			Capsule->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+		}
+	}
+	else
+	{
+		if (m_pDodgeComp)
+		{
+			m_pDodgeComp->SetInvincible(false);
+		}
+
+		UCapsuleComponent* Capsule = GetCapsuleComponent();
+		if (Capsule)
+		{
+			Capsule->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+		}
 	}
 }
 
@@ -116,7 +190,30 @@ bool APlayerCharacter::CanTag_Implementation() const
 
 void APlayerCharacter::OnTagIn_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation)
 {
-	UE_LOG(LogTemp, Log, TEXT("%s : Tag In"), *GetName());
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+
+	if (m_SpringArm)
+	{
+		// 복원 대기 아닐 때만 원본 값 저장
+		if (!m_bCameraResetPending)
+		{
+			// 원본 저장
+			m_bCameraLag = m_SpringArm->bEnableCameraLag;
+			m_bCameraCollision = m_SpringArm->bDoCollisionTest;
+		}
+
+		m_bCameraResetPending = true;
+
+		// 이동을 위해 비활성화
+		m_SpringArm->bEnableCameraLag = false;
+		m_SpringArm->bDoCollisionTest = false;
+
+		World->GetTimerManager().ClearTimer(CameraLagTimerHandle);
+		World->GetTimerManager().SetTimer(CameraLagTimerHandle, this, &APlayerCharacter::ResetCameraSetting, 0.01f, false);
+	}
+
 
 	SetActorLocation(TargetLocation);
 	SetActorRotation(TargetRotation);
@@ -128,8 +225,12 @@ void APlayerCharacter::OnTagIn_Implementation(const FVector& TargetLocation, con
 	// Tag In Montage
 	//PlayAnimMontage(TagInMontage);
 
+	// 충돌, 무적 상태 정상화
+	SetActionTagOutState(false);
+
 	// Tag In 하고 Idle 
 	SetActionState(EActionState::IDLE);
+
 }
 
 void APlayerCharacter::OnTagOut_Implementation()
@@ -141,6 +242,32 @@ void APlayerCharacter::OnTagOut_Implementation()
 
 	SetActorHiddenInGame(true);
 	SetActorEnableCollision(false);
+}
+
+void APlayerCharacter::OnTagOutAction_Implementation()
+{
+	// 태그아웃 대기 상태 (무적, 충돌 무시)
+	SetActionTagOutState(true);
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && AnimInstance->IsAnyMontagePlaying())
+	{
+		m_bPendingTagOut = true;
+		AnimInstance->OnMontageEnded.AddDynamic(this, &APlayerCharacter::HandleActionMontageEnded);
+	}
+	else
+	{
+		ExecuteActionTagOut();
+		return;
+	}
+
+	// 안전 장치(일정 시간 후 강제 태그 아웃)
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		World->GetTimerManager().SetTimer(ForceTagOutTimerHandle, this, &APlayerCharacter::ExecuteActionTagOut, m_fForceTagOutDelay, false);
+	}
+
 }
 
 bool APlayerCharacter::IsTargetable_Implementation() const
@@ -202,4 +329,41 @@ void APlayerCharacter::RequestDodge()
 	m_pDodgeComp->RequestDodge(DodgeDirection);
 }
 
+void APlayerCharacter::RequestParryAttack(AActor* ParriedEnemy)
+{
+	if (ParriedEnemy)
+	{
+		FVector TargetLocation = ParriedEnemy->GetActorLocation();
+		FVector MyLocation = GetActorLocation();
 
+		FVector Direction = TargetLocation - MyLocation;
+		Direction.Z = 0.f;
+
+		if (!Direction.IsNearlyZero())
+		{
+			FRotator LookRotation = Direction.Rotation();
+
+			SetActorRotation(LookRotation);
+
+			// 카메라 회전 동기화
+			if (Controller)
+			{
+				Controller->SetControlRotation(LookRotation);
+			}
+		}
+	}
+
+	if (m_pSkillComponent)
+	{
+		m_pSkillComponent->ExecuteSkillID(m_ParryAttackSkillID);
+	}
+}
+
+void APlayerCharacter::ResetCameraSetting()
+{
+	if (m_SpringArm)
+	{
+		m_SpringArm->bEnableCameraLag = m_bCameraLag;
+		m_SpringArm->bDoCollisionTest = m_bCameraCollision;
+	}
+}

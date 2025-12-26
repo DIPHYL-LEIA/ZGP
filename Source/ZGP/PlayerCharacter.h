@@ -28,6 +28,7 @@ public:
 	virtual bool CanTag_Implementation() const override;
 	virtual void OnTagIn_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation) override;
 	virtual void OnTagOut_Implementation() override;
+	virtual void OnTagOutAction_Implementation() override;
 
 	// Target
 	virtual bool IsTargetable_Implementation() const override;
@@ -38,6 +39,9 @@ public:
 	// Dodge
 	virtual void ApplyCombatEffect_Implementation(const FDamageData& DamageData) override;
 	void RequestDodge();
+
+	UFUNCTION(BlueprintCallable, Category = "Parry")
+	void RequestParryAttack(AActor* ParriedEnemy);
 
 protected:
 	virtual void BeginPlay() override;
@@ -53,5 +57,32 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UDodgeComponent> m_pDodgeComp;
+
+	UPROPERTY(EditDefaultsOnly)
+	FName m_ParryAttackSkillID = FName("ParryAttack");
+
+	UPROPERTY(EditDefaultsOnly)
+	float m_fForceTagOutDelay = 3.0f;
+
+
+private:
+	// 태그 시 남은 행동 처리
+	bool m_bPendingTagOut = false;
+	FTimerHandle ForceTagOutTimerHandle;
+
+	// Camera Lag
+	bool m_bCameraLag = false;
+	bool m_bCameraCollision = true;
+	bool m_bCameraResetPending = false;
+	FTimerHandle CameraLagTimerHandle;
+
+	UFUNCTION()
+	void ResetCameraSetting();
+
+	UFUNCTION()
+	void HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	void ExecuteActionTagOut();
+	void SetActionTagOutState(bool bActive);
 
 };

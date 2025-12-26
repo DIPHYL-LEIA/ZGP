@@ -54,6 +54,29 @@ void USquadManagerComponent::RequestTag()
 
 }
 
+void USquadManagerComponent::RequestParryTag(AActor* ParriedEnemy)
+{
+	if (m_arSquadCharacter.Num() < 2) return;
+
+	if (m_pActiveCharacter == nullptr)
+	{
+		m_pActiveCharacter = m_arSquadCharacter[0];
+	}
+
+	APawn* StandbyCharacter = (m_arSquadCharacter[0] == m_pActiveCharacter) ? m_arSquadCharacter[1] : m_arSquadCharacter[0];
+	if (m_pActiveCharacter == nullptr || StandbyCharacter == nullptr) return;
+
+	APawn* PreviousCharacter = m_pActiveCharacter;
+
+	DoParryTag(StandbyCharacter, PreviousCharacter);
+	m_pActiveCharacter = StandbyCharacter;
+
+	OnParryTagExecute.Broadcast(StandbyCharacter, ParriedEnemy);
+
+	UE_LOG(LogTemp, Log, TEXT("[SquadManagerComponent] : Parry Tag Success"));
+
+}
+
 void USquadManagerComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -71,6 +94,25 @@ void USquadManagerComponent::DoTag(APawn* InCharacter, APawn* OutCharacter)
 	ITaggable::Execute_OnTagIn(InCharacter, TargetLocation, TargetRotation);
 
 	// Player Controller¿¡ Possess
+	if (APlayerController* PC = Cast<APlayerController>(GetOwner()))
+	{
+		const FRotator CameraRotation = PC->GetControlRotation();
+
+		PC->Possess(InCharacter);
+		PC->SetControlRotation(CameraRotation);
+	}
+}
+
+void USquadManagerComponent::DoParryTag(APawn* InCharacter, APawn* OutCharacter)
+{
+	FVector TargetLocation;
+	FRotator TargetRotation;
+
+	CalculateTagSpawnTransform(OutCharacter, TargetLocation, TargetRotation);
+
+	ITaggable::Execute_OnTagOutAction(OutCharacter);
+	ITaggable::Execute_OnTagIn(InCharacter, TargetLocation, TargetRotation);
+
 	if (APlayerController* PC = Cast<APlayerController>(GetOwner()))
 	{
 		const FRotator CameraRotation = PC->GetControlRotation();

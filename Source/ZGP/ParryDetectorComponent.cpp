@@ -171,7 +171,7 @@ bool UParryDetectorComponent::IsValidParryTarget(const FParryableAttackInfo& Inf
 	// 전방 각도 내의 위치에 있는지 체크
 	FVector ToAttacker = AttackerLocation - CharacterLocation;
 	ToAttacker.Z = 0.f;
-	ToAttacker.GetSafeNormal();
+	ToAttacker = ToAttacker.GetSafeNormal();
 
 	FVector ForwardXY = FVector(CharacterForward.X, CharacterForward.Y, 0.f).GetSafeNormal();
 

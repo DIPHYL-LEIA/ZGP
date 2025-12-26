@@ -27,4 +27,6 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Tag")
 	void OnTagOut();
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Tag")
+	void OnTagOutAction();
 };

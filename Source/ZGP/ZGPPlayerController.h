@@ -32,6 +32,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<class UTargetingComponent> m_pTargetingComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<class UParryDetectorComponent> m_pParryDetectorComponent;
+	
+
 	// Input
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<class UInputMappingContext> IMC_Default = nullptr;
@@ -71,6 +75,7 @@ protected:
 	void HandleJump();
 	void HandleStopJumping();
 	void HandleDodge();
+	void HandleParryTag(APawn* NewActiveCharacter, AActor* ParriedEnemy);
 
 	void HandleAttack();
 	void HandleTag();

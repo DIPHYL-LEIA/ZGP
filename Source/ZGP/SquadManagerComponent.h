@@ -8,6 +8,8 @@
 
 class APawn;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnParryTagExecute, APawn*, NewActiveCharacter, AActor*, ParriedEnemy);
+
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class ZGP_API USquadManagerComponent : public UActorComponent
 {
@@ -20,6 +22,12 @@ public:
 	void RegisterCharacter(APawn* Character);
 	void RequestTag();
 
+	UFUNCTION(BlueprintCallable, Category = "Tag")
+	void RequestParryTag(AActor* ParriedEnemy);
+
+	UPROPERTY(BlueprintAssignable, Category = "Tag")
+	FOnParryTagExecute OnParryTagExecute;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -29,6 +37,7 @@ protected:
 	TObjectPtr<APawn> m_pActiveCharacter;
 
 	void DoTag(APawn* InCharacter, APawn* OutCharacter);
+	void DoParryTag(APawn* InCharacter, APawn* OutCharacter);
 
 private:
 	void CalculateTagSpawnTransform(const APawn* BaseCharacter, FVector& OutLocation, FRotator& OutRotation) const;
