@@ -50,7 +50,11 @@ EHitDirection UHitReactionComponent::CalculateHitDirection(const FVector& HitDir
 void UHitReactionComponent::PlayHitMontage(EHitReactionType ReactionType, EHitDirection Direction)
 {
 	ACharacter* Owner = Cast<ACharacter>(GetOwner());
-	if (!Owner) return;
+	if (!Owner)
+	{
+		OnHitReactionEnd.Broadcast();
+		return;
+	}
 
 	UAnimMontage* Montage = nullptr;
 
@@ -68,21 +72,39 @@ void UHitReactionComponent::PlayHitMontage(EHitReactionType ReactionType, EHitDi
 		Montage = m_pKnockdownMontage;
 		break;
 	default:
+		OnHitReactionEnd.Broadcast();
 		return;
 	}
 
-	if (Montage)
+	if (!Montage)
 	{
-		UAnimInstance* AnimInstance = Owner->GetMesh()->GetAnimInstance();
-		if (AnimInstance)
-		{
-			AnimInstance->OnMontageEnded.RemoveDynamic(this, &UHitReactionComponent::HandleMontageEnd);
-			AnimInstance->OnMontageEnded.AddDynamic(this, &UHitReactionComponent::HandleMontageEnd);
-		}
-		FName Name = GetSectionName(Direction);
-		Owner->PlayAnimMontage(Montage, 1.0f, Name);
+		UE_LOG(LogTemp, Warning, TEXT("[HitReaction] No montage"));
+		OnHitReactionEnd.Broadcast();
+		return;
 	}
 
+	UAnimInstance* AnimInstance = Owner->GetMesh()->GetAnimInstance();
+	if (!AnimInstance)
+	{
+		OnHitReactionEnd.Broadcast();
+		return;
+	}
+
+	m_pCurrentHitMontage = Montage;
+
+	AnimInstance->OnMontageEnded.RemoveDynamic(this, &UHitReactionComponent::HandleMontageEnd);
+	AnimInstance->OnMontageEnded.AddDynamic(this, &UHitReactionComponent::HandleMontageEnd);
+
+	FName SectionName = GetSectionName(Direction);
+	float Duration = Owner->PlayAnimMontage(Montage, 1.0f, SectionName);
+
+	if (Duration <= 0.5)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[HitReaction] PlayAnimMontage failed"));
+		AnimInstance->OnMontageEnded.RemoveDynamic(this, &UHitReactionComponent::HandleMontageEnd);
+		m_pCurrentHitMontage = nullptr;
+		OnHitReactionEnd.Broadcast();
+	}
 }
 
 void UHitReactionComponent::ApplyKnockback(const FVector& HitDirection, EHitReactionType ReactionType)
@@ -144,6 +166,11 @@ FName UHitReactionComponent::GetSectionName(EHitDirection Direction)
 
 void UHitReactionComponent::HandleMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 {
+	if (Montage != m_pCurrentHitMontage)
+	{
+		return;
+	}
+
 	ACharacter* Owner = Cast<ACharacter>(GetOwner());
 	if (Owner)
 	{
@@ -152,5 +179,6 @@ void UHitReactionComponent::HandleMontageEnd(UAnimMontage* Montage, bool bInterr
 			AnimInstance->OnMontageEnded.RemoveDynamic(this, &UHitReactionComponent::HandleMontageEnd);
 		}
 	}
+	m_pCurrentHitMontage = nullptr;
 	OnHitReactionEnd.Broadcast();
 }

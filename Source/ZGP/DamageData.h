@@ -47,6 +47,7 @@ struct FDamageData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
 	FVector HitLocation = FVector::ZeroVector;
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
+	bool bCanChainAttack = false;
 
 };

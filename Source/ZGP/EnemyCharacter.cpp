@@ -75,10 +75,18 @@ void AEnemyCharacter::BeginPlay()
 
 void AEnemyCharacter::ApplyCombatEffect_Implementation(const FDamageData& DamageData)
 {
+	// Daze 상태에서 강공격 받을 시 Chain Attck
+	if (m_pEnemyDazeComponent && m_pEnemyDazeComponent->IsDazed())
+	{
+		if (DamageData.bCanChainAttack)
+		{
+			m_pEnemyDazeComponent->TriggerChainAttack();
+		}
+	}
+
 	Super::ApplyCombatEffect_Implementation(DamageData);
 
-	// Daze
-	if (m_pEnemyDazeComponent)
+	if (m_pEnemyDazeComponent && !m_pEnemyDazeComponent->IsDazed())
 	{
 		m_pEnemyDazeComponent->TakeDaze(DamageData.DazeValue);
 	}
@@ -91,9 +99,19 @@ void AEnemyCharacter::HandleDaze()
 
 void AEnemyCharacter::HandleDazeRecovered()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[Enemy] HandleDazeRecovered CALLED - IsDead: %s"),
+		IsActionState(EActionState::DEAD) ? TEXT("true") : TEXT("false"));
+
 	if (IsActionState(EActionState::DEAD) == false)
 	{
+		bool bCanChange = CanChangeActionState(EActionState::IDLE);
+		UE_LOG(LogTemp, Warning, TEXT("[Enemy] CanChangeActionState(IDLE): %s"),
+			bCanChange ? TEXT("true") : TEXT("false"));
+
 		SetActionState(EActionState::IDLE);
+
+		UE_LOG(LogTemp, Warning, TEXT("[Enemy] After SetActionState - IsIdle: %s"),
+			IsActionState(EActionState::IDLE) ? TEXT("true") : TEXT("false"));
 	}
 }
 

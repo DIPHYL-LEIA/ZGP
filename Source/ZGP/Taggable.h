@@ -29,4 +29,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Tag")
 	void OnTagOutAction();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Tag")
+	void OnChainAttackTag(const FVector& TargetLocation, const FRotator& TargetRotation, AActor* TargetEnemy);
 };

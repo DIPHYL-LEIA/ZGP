@@ -58,6 +58,9 @@ protected:
 	float m_fLaunchVerticalRatio = 0.5f;
 		
 private:
+	UPROPERTY()
+	TObjectPtr<UAnimMontage> m_pCurrentHitMontage;
+
 	EHitDirection CalculateHitDirection(const FVector& HitDirection) const;
 	void PlayHitMontage(EHitReactionType ReactionType, EHitDirection Direction);
 	void ApplyKnockback(const FVector& HitDirection, EHitReactionType ReactionType);

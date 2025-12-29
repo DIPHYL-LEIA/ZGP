@@ -100,6 +100,11 @@ void USquadManagerComponent::DoTag(APawn* InCharacter, APawn* OutCharacter)
 
 		PC->Possess(InCharacter);
 		PC->SetControlRotation(CameraRotation);
+
+		if (PC->PlayerCameraManager)
+		{
+			PC->PlayerCameraManager->SetGameCameraCutThisFrame();
+		}
 	}
 }
 
@@ -119,6 +124,11 @@ void USquadManagerComponent::DoParryTag(APawn* InCharacter, APawn* OutCharacter)
 
 		PC->Possess(InCharacter);
 		PC->SetControlRotation(CameraRotation);
+
+		if (PC->PlayerCameraManager)
+		{
+			PC->PlayerCameraManager->SetGameCameraCutThisFrame();
+		}
 	}
 }
 

@@ -32,6 +32,8 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, Category = "Daze")
 	bool m_bIsDazed;
 
+	bool m_bDazeTimerPause = false;
+
 	FTimerHandle DazeRecoverTimerHandle;
 
 	virtual void InitializeComponent() override;
@@ -42,6 +44,15 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Daze")
 	void RecoverDaze();
+
+	UFUNCTION(BlueprintCallable, Category = "Daze")
+	bool IsDazed() const { return m_bIsDazed; }
+
+	UFUNCTION(BlueprintCallable, Category = "Daze")
+	void PauseDazeTimer(bool bPause);
+
+	UFUNCTION(BlueprintCallable, Category = "Daze")
+	void TriggerChainAttack();
 
 	UPROPERTY(BlueprintAssignable, Category = "Daze")
 	FOnDazeChanged OnDazeChanged;

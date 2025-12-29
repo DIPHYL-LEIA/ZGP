@@ -13,6 +13,7 @@ UEnemyDazeComponent::UEnemyDazeComponent()
 	m_fMaxDaze = 100.f;
 	m_fDazeDuration = 5.f;
 	m_bIsDazed = false;
+    m_bDazeTimerPause = false;
 }
 
 void UEnemyDazeComponent::InitializeComponent()
@@ -21,48 +22,71 @@ void UEnemyDazeComponent::InitializeComponent()
 
 	m_fCurrentDaze = 0.f;
 	m_bIsDazed = false;
+    m_bDazeTimerPause = false;
 }
 
 void UEnemyDazeComponent::TakeDaze(float Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("[DazeComp] TakeDaze - Value: %.1f, m_bIsDazed: %s, CurrentDaze: %.1f"),
-		Value, m_bIsDazed ? TEXT("true") : TEXT("false"), m_fCurrentDaze);
-	if (m_bIsDazed || Value <= 0.f) return;
+    if (m_bIsDazed || Value <= 0.f) return;
 
-	m_fCurrentDaze = FMath::Clamp(m_fCurrentDaze + Value, 0.f, m_fMaxDaze);
+    m_fCurrentDaze = FMath::Clamp(m_fCurrentDaze + Value, 0.f, m_fMaxDaze);
 
-	OnDazeChanged.Broadcast(m_fCurrentDaze, m_fMaxDaze);
-	UE_LOG(LogTemp, Log, TEXT("TakeDaze : %f / %f"), m_fCurrentDaze, m_fMaxDaze);
+    OnDazeChanged.Broadcast(m_fCurrentDaze, m_fMaxDaze);
 
-	if (m_fCurrentDaze >= m_fMaxDaze)
-	{
-		m_bIsDazed = true;
+    if (m_fCurrentDaze >= m_fMaxDaze)
+    {
+        m_bIsDazed = true;
+        OnDazed.Broadcast();
 
-		OnDazed.Broadcast();
-		UE_LOG(LogTemp, Log, TEXT("Daze State : DAZED"));
-
-		if (UWorld* World = GetWorld())
-		{
-			World->GetTimerManager().SetTimer(DazeRecoverTimerHandle, this, &UEnemyDazeComponent::RecoverDaze, m_fDazeDuration, false);
-		}
-	}
+        if (UWorld* World = GetWorld())
+        {
+            World->GetTimerManager().SetTimer(
+                DazeRecoverTimerHandle,
+                this,
+                &UEnemyDazeComponent::RecoverDaze,
+                m_fDazeDuration,
+                false);
+        }
+    }
 }
 
 void UEnemyDazeComponent::RecoverDaze()
 {
-	if (UWorld* World = GetWorld())
-	{
-		World->GetTimerManager().ClearTimer(DazeRecoverTimerHandle);
-	}
+    if (UWorld* World = GetWorld())
+    {
+        World->GetTimerManager().ClearTimer(DazeRecoverTimerHandle);
+    }
 
-	m_bIsDazed = false;
-	m_fCurrentDaze = 0.f;
+    m_bIsDazed = false;
+    m_bDazeTimerPause = false;
+    m_fCurrentDaze = 0.f;
 
-	OnDazeRecovered.Broadcast();
-	UE_LOG(LogTemp, Log, TEXT("Daze State : RECOVERED"));
-	UE_LOG(LogTemp, Warning, TEXT("[DazeComp] === RECOVERED === m_bIsDazed now: %s, CurrentDaze: %.1f"),
-		m_bIsDazed ? TEXT("true") : TEXT("false"), m_fCurrentDaze);
+    OnDazeRecovered.Broadcast();
+    OnDazeChanged.Broadcast(m_fCurrentDaze, m_fMaxDaze);
+}
 
-	// UI 초기화용 수치 변화 방송
-	OnDazeChanged.Broadcast(m_fCurrentDaze, m_fMaxDaze);
+void UEnemyDazeComponent::PauseDazeTimer(bool bPause)
+{
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    if (bPause && !m_bDazeTimerPause)
+    {
+        World->GetTimerManager().PauseTimer(DazeRecoverTimerHandle);
+        m_bDazeTimerPause = true;
+        UE_LOG(LogTemp, Log, TEXT("[DazeComp] Daze Timer PAUSED"));
+    }
+    else if (!bPause && m_bDazeTimerPause)
+    {
+        World->GetTimerManager().UnPauseTimer(DazeRecoverTimerHandle);
+        m_bDazeTimerPause = false;
+        UE_LOG(LogTemp, Log, TEXT("[DazeComp] Daze Timer RESUMED"));
+    }
+}
+
+void UEnemyDazeComponent::TriggerChainAttack()
+{
+    if (!m_bIsDazed) return;
+    UE_LOG(LogTemp, Warning, TEXT("[DazeComp] Chain Attack Triggered!"));
+    OnChainAttack.Broadcast(GetOwner());
 }

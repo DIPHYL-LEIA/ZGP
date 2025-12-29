@@ -70,19 +70,20 @@ private:
 	bool m_bPendingTagOut = false;
 	FTimerHandle ForceTagOutTimerHandle;
 
-	// Camera Lag
-	bool m_bCameraLag = false;
-	bool m_bCameraCollision = true;
-	bool m_bCameraResetPending = false;
-	FTimerHandle CameraLagTimerHandle;
-
-	UFUNCTION()
-	void ResetCameraSetting();
 
 	UFUNCTION()
 	void HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	void ExecuteActionTagOut();
 	void SetActionTagOutState(bool bActive);
+
+	// Camera Lag
+	bool m_bCameraLag = false;
+	bool m_bCameraCollision = true;
+	bool m_bCameraResetPending = false;
+	FTimerHandle m_CameraLagTimerHandle;
+
+	UFUNCTION()
+	void ResetCameraSetting();
 
 };

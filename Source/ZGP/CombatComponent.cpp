@@ -52,6 +52,7 @@ void UCombatComponent::PerformAttackTrace(const FAttackData& AttackData)
 		{
 			if (m_setHitActors.Contains(HitActor))
 			{
+				UE_LOG(LogTemp, Warning, TEXT("[CombatComp] SKIPPED - Already hit this actor"));
 				continue;
 			}
 			m_setHitActors.Add(HitActor);
@@ -109,6 +110,7 @@ void UCombatComponent::ApplyDamage(AActor* Target, const FAttackData& AttackData
 	DamageData.HitLocation = HitResult.ImpactPoint;
 	DamageData.HitDirection = (Target->GetActorLocation() - Owner->GetActorLocation()).GetSafeNormal();
 	DamageData.HitReaction = EHitReactionType::LIGHT;
+	DamageData.bCanChainAttack = AttackData.bAllowMultiHit;
 
 	ICombatInteraction::Execute_ApplyCombatEffect(Target, DamageData);
 }

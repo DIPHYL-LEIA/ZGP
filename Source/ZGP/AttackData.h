@@ -28,4 +28,7 @@ struct FAttackData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
 	bool bAllowMultiHit = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
+	bool bCanChainAttack = false;
 };

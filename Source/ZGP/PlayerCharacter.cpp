@@ -136,6 +136,16 @@ void APlayerCharacter::SetActionTagOutState(bool bActive)
 	}
 }
 
+void APlayerCharacter::ResetCameraSetting()
+{
+	if (m_SpringArm)
+	{
+		m_SpringArm->bEnableCameraLag = m_bCameraLag;
+		m_SpringArm->bDoCollisionTest = m_bCameraCollision;
+	}
+	m_bCameraResetPending = false;
+}
+
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
 	const FVector2D MovementVector = Value.Get<FVector2D>();
@@ -179,8 +189,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 bool APlayerCharacter::CanTag_Implementation() const
 {
-	// 젠존제에서 태그 가능/불가능한 시점 다시 알아보고 수정하기
-	if (IsActionState(EActionState::ATTACKING) || IsActionState(EActionState::HIT) ||
+	if (IsActionState(EActionState::HIT) ||
 		IsActionState(EActionState::DODGING) || IsActionState(EActionState::DEAD))
 	{
 		return false;
@@ -193,55 +202,62 @@ void APlayerCharacter::OnTagIn_Implementation(const FVector& TargetLocation, con
 	UWorld* World = GetWorld();
 	if (!World) return;
 
+	// 기존 타이머 정리
+	World->GetTimerManager().ClearTimer(m_CameraLagTimerHandle);
 
+	// ============================================
+	// 1. 카메라 랙 비활성화 (선택적)
+	// ============================================
 	if (m_SpringArm)
 	{
-		// 복원 대기 아닐 때만 원본 값 저장
+		// 복원 대기 중이 아닐 때만 원본 값 저장 (상태 오염 방지)
 		if (!m_bCameraResetPending)
 		{
-			// 원본 저장
 			m_bCameraLag = m_SpringArm->bEnableCameraLag;
 			m_bCameraCollision = m_SpringArm->bDoCollisionTest;
 		}
-
 		m_bCameraResetPending = true;
 
-		// 이동을 위해 비활성화
 		m_SpringArm->bEnableCameraLag = false;
 		m_SpringArm->bDoCollisionTest = false;
-
-		World->GetTimerManager().ClearTimer(CameraLagTimerHandle);
-		World->GetTimerManager().SetTimer(CameraLagTimerHandle, this, &APlayerCharacter::ResetCameraSetting, 0.01f, false);
 	}
 
-
+	// ============================================
+	// 2. 핵심 로직 (반드시 실행)
+	// ============================================
 	SetActorLocation(TargetLocation);
 	SetActorRotation(TargetRotation);
 
-	// 컨트롤러 빙의 , 충돌 켜기
+	// ============================================
+	// 3. SpringArm Transform 강제 갱신 (B->A 튐 방지)
+	// ============================================
+	if (m_SpringArm)
+	{
+		m_SpringArm->UpdateChildTransforms();
+	}
+
 	SetActorHiddenInGame(false);
 	SetActorEnableCollision(true);
-
-	// Tag In Montage
-	//PlayAnimMontage(TagInMontage);
-
-	// 충돌, 무적 상태 정상화
 	SetActionTagOutState(false);
-
-	// Tag In 하고 Idle 
 	SetActionState(EActionState::IDLE);
 
+	// ============================================
+	// 4. 카메라 복원 예약
+	// ============================================
+	if (m_SpringArm)
+	{
+		//World->GetTimerManager().SetTimer(m_CameraLagTimerHandle, this, &APlayerCharacter::ResetCameraSetting, 0.01f, false);
+		World->GetTimerManager().SetTimerForNextTick(this, &APlayerCharacter::ResetCameraSetting);
+	}
 }
 
 void APlayerCharacter::OnTagOut_Implementation()
 {
 	UE_LOG(LogTemp, Log, TEXT("%s : Execute Tag Out "), *GetName());
 
-	// Tag Out Montage
-	//PlayAnimMontage(TagOutMontage);
-
 	SetActorHiddenInGame(true);
 	SetActorEnableCollision(false);
+	SetActionState(EActionState::IDLE);
 }
 
 void APlayerCharacter::OnTagOutAction_Implementation()
@@ -261,13 +277,12 @@ void APlayerCharacter::OnTagOutAction_Implementation()
 		return;
 	}
 
-	// 안전 장치(일정 시간 후 강제 태그 아웃)
+	// 안전 장치 (일정 시간 후 강제 태그 아웃)
 	UWorld* World = GetWorld();
 	if (World)
 	{
 		World->GetTimerManager().SetTimer(ForceTagOutTimerHandle, this, &APlayerCharacter::ExecuteActionTagOut, m_fForceTagOutDelay, false);
 	}
-
 }
 
 bool APlayerCharacter::IsTargetable_Implementation() const
@@ -300,11 +315,7 @@ void APlayerCharacter::ApplyCombatEffect_Implementation(const FDamageData& Damag
 {
 	UE_LOG(LogTemp, Log, TEXT("[Player] Hit Received! Invincible: %d"),
 		(m_pDodgeComp && m_pDodgeComp->IsInvincible()));
-	//if (m_pDodgeComp && m_pDodgeComp->IsInvincible())
-	//{
-	//	m_pDodgeComp->TryPerfectDodgeTrigger();
-	//	return;
-	//}
+
 	if (m_pDodgeComp && m_pDodgeComp->IsInvincible())
 	{
 		bool bSuccess = m_pDodgeComp->TryPerfectDodgeTrigger();
@@ -323,8 +334,7 @@ void APlayerCharacter::RequestDodge()
 	if (!m_pDodgeComp) return;
 
 	FVector DodgeDirection = FVector::ZeroVector;
-
-	DodgeDirection = GetLastMovementInputVector();						// ??
+	DodgeDirection = GetLastMovementInputVector();
 
 	m_pDodgeComp->RequestDodge(DodgeDirection);
 }
@@ -342,7 +352,6 @@ void APlayerCharacter::RequestParryAttack(AActor* ParriedEnemy)
 		if (!Direction.IsNearlyZero())
 		{
 			FRotator LookRotation = Direction.Rotation();
-
 			SetActorRotation(LookRotation);
 
 			// 카메라 회전 동기화
@@ -356,14 +365,5 @@ void APlayerCharacter::RequestParryAttack(AActor* ParriedEnemy)
 	if (m_pSkillComponent)
 	{
 		m_pSkillComponent->ExecuteSkillID(m_ParryAttackSkillID);
-	}
-}
-
-void APlayerCharacter::ResetCameraSetting()
-{
-	if (m_SpringArm)
-	{
-		m_SpringArm->bEnableCameraLag = m_bCameraLag;
-		m_SpringArm->bDoCollisionTest = m_bCameraCollision;
 	}
 }

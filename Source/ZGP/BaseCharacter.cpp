@@ -68,11 +68,12 @@ void ABaseCharacter::HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted
 		m_pSkillComponent->NotifySkillCompleted();
 	}
 
-	if (bInterrupted) return;
+	//if (bInterrupted) return;
+	if (IsActionState(EActionState::HIT)) return;
 
 	if (m_pActionStateComponent && m_pActionStateComponent->IsTemporaryState())
 	{
-		if (IsActionState(EActionState::DEAD) == false)
+		if (IsActionState(EActionState::DEAD))
 		{
 			SetActionState(EActionState::IDLE);
 		}
