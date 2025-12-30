@@ -5,11 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "TargetProvider.h"
+#include "SquadAction.h"
 #include "ZGPPlayerController.generated.h"
 
 
 UCLASS()
-class ZGP_API AZGPPlayerController : public APlayerController, public ITargetProvider
+class ZGP_API AZGPPlayerController : public APlayerController, public ITargetProvider, public ISquadAction
 {
 	GENERATED_BODY()
 
@@ -20,6 +21,10 @@ public:
 
 	virtual AActor* GetCurrentTargetActor_Implementation() override;
 	virtual void SetCurrentTargetActor_Implementation(AActor* NewTarget) override;
+
+	virtual bool TryTriggerChainAttack_Implementation(AActor* DazedEnemy) override;
+	virtual bool TryTriggerParryAssist_Implementation(AActor* Attacker, const FVector& AttackDirection) override;
+	virtual bool TryTriggerQuickAssist_Implementation() override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -34,6 +39,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<class UParryDetectorComponent> m_pParryDetectorComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<class UChainAttackComponent> m_pChainAttackComponent;
 	
 
 	// Input
@@ -61,10 +69,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> IA_Dodge;
 
-	// Tag
-	UPROPERTY(EditDefaultsOnly, Category = "Tag")
-	TArray<TSubclassOf<class APlayerCharacter>> m_arTagCharacter;
-
 protected:
 	// (선택)입력 매핑 우선 순위 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -75,11 +79,26 @@ protected:
 	void HandleJump();
 	void HandleStopJumping();
 	void HandleDodge();
+
+	UFUNCTION()
 	void HandleParryTag(APawn* NewActiveCharacter, AActor* ParriedEnemy);
+
+	// Chain Attack Handler
+	UFUNCTION()
+	void HandleChainAttackExecute();
+	UFUNCTION()
+	void HandleChainAttackCancel();
+	UFUNCTION()
+	void HandleChainAttackFinish();
 
 	void HandleAttack();
 	void HandleTag();
 	void HandleLockOn();
 
+private:
+	UPROPERTY()
+	TWeakObjectPtr<AActor> m_pCurrentChainTarget;
+
+	void PauseDazeTimer(AActor* Target, bool bPause);
 
 };

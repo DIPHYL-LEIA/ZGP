@@ -9,6 +9,8 @@
 class APawn;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnParryTagExecute, APawn*, NewActiveCharacter, AActor*, ParriedEnemy);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnChainAttackExecute, APawn*, NewActiveCharacter, AActor*, TargetEnemy);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSquadInitialized, APawn*, FirstCharacter);
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class ZGP_API USquadManagerComponent : public UActorComponent
@@ -18,19 +20,38 @@ class ZGP_API USquadManagerComponent : public UActorComponent
 public:
 	USquadManagerComponent();
 
-	void InitActiveCharacter(APawn* Character);
+	UFUNCTION()
+	void InitializeSquad();
+
+	UFUNCTION()
+	APawn* GetFirstCharacter() const;
+
+	UFUNCTION()
+	APawn* GetActiveCharacter() const { return m_pActiveCharacter; }
+
 	void RegisterCharacter(APawn* Character);
 	void RequestTag();
 
 	UFUNCTION(BlueprintCallable, Category = "Tag")
 	void RequestParryTag(AActor* ParriedEnemy);
 
+	UFUNCTION(BlueprintCallable, Category = "ChainAttack")
+	void RequestChainAttack(AActor* TargetEnemy);
+
 	UPROPERTY(BlueprintAssignable, Category = "Tag")
 	FOnParryTagExecute OnParryTagExecute;
+
+	UPROPERTY(BlueprintAssignable, Category = "ChainAttack")
+	FOnChainAttackExecute OnChainAttackExecute;
+
+	UPROPERTY(BlueprintAssignable, Category = "ChainAttack")
+	FOnSquadInitialized OnSquadInitialized;
 
 protected:
 	virtual void BeginPlay() override;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Squad")
+	TArray<TSubclassOf<APawn>> m_arSquadCharacterClass;
 	UPROPERTY()
 	TArray<TObjectPtr<APawn>> m_arSquadCharacter;
 	UPROPERTY()
@@ -38,9 +59,11 @@ protected:
 
 	void DoTag(APawn* InCharacter, APawn* OutCharacter);
 	void DoParryTag(APawn* InCharacter, APawn* OutCharacter);
+	void DoChainAttack(APawn* InCharacter, APawn* OutCharacter, AActor* TargetEnemy);
 
 private:
 	void CalculateTagSpawnTransform(const APawn* BaseCharacter, FVector& OutLocation, FRotator& OutRotation) const;
+	void CalculateChainAttackSpawnTransform(AActor* TargetEnemy, FVector& OutLocation, FRotator& OutRotation) const;
 	bool ValidTagSpawnLocation(const FVector& Location, FVector& ValidLocation) const;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Tag")
@@ -48,4 +71,7 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Tag")
 	float m_fTagSpawnSideOffset = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tag")
+	float m_fChainAttackSpawnDistance = 300.f;
 };

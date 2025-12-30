@@ -205,12 +205,10 @@ void APlayerCharacter::OnTagIn_Implementation(const FVector& TargetLocation, con
 	// 기존 타이머 정리
 	World->GetTimerManager().ClearTimer(m_CameraLagTimerHandle);
 
-	// ============================================
-	// 1. 카메라 랙 비활성화 (선택적)
-	// ============================================
+	// 1. 카메라 랙 비활성화
 	if (m_SpringArm)
 	{
-		// 복원 대기 중이 아닐 때만 원본 값 저장 (상태 오염 방지)
+		// 복원 대기 중이 아닐 때만 원본 값 저장
 		if (!m_bCameraResetPending)
 		{
 			m_bCameraLag = m_SpringArm->bEnableCameraLag;
@@ -222,15 +220,11 @@ void APlayerCharacter::OnTagIn_Implementation(const FVector& TargetLocation, con
 		m_SpringArm->bDoCollisionTest = false;
 	}
 
-	// ============================================
 	// 2. 핵심 로직 (반드시 실행)
-	// ============================================
 	SetActorLocation(TargetLocation);
 	SetActorRotation(TargetRotation);
 
-	// ============================================
 	// 3. SpringArm Transform 강제 갱신 (B->A 튐 방지)
-	// ============================================
 	if (m_SpringArm)
 	{
 		m_SpringArm->UpdateChildTransforms();
@@ -241,9 +235,7 @@ void APlayerCharacter::OnTagIn_Implementation(const FVector& TargetLocation, con
 	SetActionTagOutState(false);
 	SetActionState(EActionState::IDLE);
 
-	// ============================================
 	// 4. 카메라 복원 예약
-	// ============================================
 	if (m_SpringArm)
 	{
 		//World->GetTimerManager().SetTimer(m_CameraLagTimerHandle, this, &APlayerCharacter::ResetCameraSetting, 0.01f, false);
@@ -277,7 +269,7 @@ void APlayerCharacter::OnTagOutAction_Implementation()
 		return;
 	}
 
-	// 안전 장치 (일정 시간 후 강제 태그 아웃)
+	// 일정 시간 후 강제 태그 아웃
 	UWorld* World = GetWorld();
 	if (World)
 	{

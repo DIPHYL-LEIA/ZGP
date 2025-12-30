@@ -13,6 +13,7 @@
 #include "ParryDetectorComponent.h"
 #include "SquadManagerComponent.h"
 #include "TargetingComponent.h"
+#include "ChainAttackComponent.h"
 #include "Taggable.h"
 
 #include "GameFramework/GameModeBase.h"
@@ -23,6 +24,7 @@ AZGPPlayerController::AZGPPlayerController()
 	m_pSquadManagerComponent = CreateDefaultSubobject<USquadManagerComponent>(TEXT("SquadManagerComponent"));
 	m_pTargetingComponent = CreateDefaultSubobject<UTargetingComponent>(TEXT("TargetingComponent"));
 	m_pParryDetectorComponent = CreateDefaultSubobject<UParryDetectorComponent>(TEXT("ParryDetectorComponent"));
+	m_pChainAttackComponent = CreateDefaultSubobject<UChainAttackComponent>(TEXT("ChainAttackComponent"));
 
 	// Input Context
 	static ConstructorHelpers::FObjectFinder<UInputAction> MoveActionAsset(TEXT("/Game/ZGProject/ZGPInput/ia-move.ia-move"));
@@ -91,53 +93,20 @@ void AZGPPlayerController::BeginPlay()
 	{
 		m_pSquadManagerComponent->OnParryTagExecute.AddDynamic(this, &AZGPPlayerController::HandleParryTag);
 
-		if (m_arTagCharacter.Num() > 0)
+		m_pSquadManagerComponent->InitializeSquad();
+
+		APawn* FirstCharacter = m_pSquadManagerComponent->GetFirstCharacter();
+		if (FirstCharacter)
 		{
-			APlayerCharacter* FirstCharacter = nullptr;
-			FVector CharacterLocation = FVector::ZeroVector;
-			FRotator CharacterRotation = FRotator::ZeroRotator;
-
-			// Player Start 위치 
-			if (AGameModeBase* GameMode = GetWorld()->GetAuthGameMode())
-			{
-				AActor* PlayerStart = GameMode->FindPlayerStart(this);
-				if (PlayerStart)
-				{
-					CharacterLocation = PlayerStart->GetActorLocation();
-					CharacterRotation = PlayerStart->GetActorRotation();
-				}
-			}
-
-			if (GetPawn())
-			{
-				GetPawn()->Destroy();
-			}
-
-			for (int i = 0; i < m_arTagCharacter.Num(); ++i)
-			{
-				if (m_arTagCharacter[i])
-				{
-					APlayerCharacter* NewCharacter = GetWorld()->SpawnActor<APlayerCharacter>(m_arTagCharacter[i], CharacterLocation, CharacterRotation); //
-
-					if (NewCharacter)
-					{
-						m_pSquadManagerComponent->RegisterCharacter(NewCharacter);
-
-						if (i == 0)
-						{
-							FirstCharacter = NewCharacter;
-							Possess(FirstCharacter);
-
-							m_pSquadManagerComponent->InitActiveCharacter(FirstCharacter);
-						}
-						else
-						{
-							ITaggable::Execute_OnTagOut(NewCharacter);
-						}
-					}
-				}
-			}
+			Possess(FirstCharacter);
 		}
+	}
+
+	if (m_pChainAttackComponent)
+	{
+		m_pChainAttackComponent->OnChainAttackExecuted.AddDynamic(this, &AZGPPlayerController::HandleChainAttackExecute);
+		m_pChainAttackComponent->OnChainAttackFinished.AddDynamic(this, &AZGPPlayerController::HandleChainAttackFinish);
+		m_pChainAttackComponent->OnChainAttackCancelled.AddDynamic(this, &AZGPPlayerController::HandleChainAttackCancel);
 	}
 }
 
@@ -232,6 +201,35 @@ void AZGPPlayerController::SetCurrentTargetActor_Implementation(AActor* NewTarge
 	//}
 }
 
+bool AZGPPlayerController::TryTriggerChainAttack_Implementation(AActor* DazedEnemy)
+{
+	if (!m_pChainAttackComponent) return false;
+	if (!DazedEnemy) return false;
+
+	if (m_pChainAttackComponent->IsChainActive()) return false;
+
+	m_pCurrentChainTarget = DazedEnemy;
+
+	PauseDazeTimer(DazedEnemy, true);
+
+	bool bSuccess = m_pChainAttackComponent->TriggerChainAttack(DazedEnemy);
+
+	UE_LOG(LogTemp, Warning, TEXT("[PlayerController] TryTriggerChainAttack on %s - %s"),
+		*DazedEnemy->GetName(), bSuccess ? TEXT("SUCCESS") : TEXT("FAILED"));
+
+	return bSuccess;
+}
+
+bool AZGPPlayerController::TryTriggerParryAssist_Implementation(AActor* Attacker, const FVector& AttackDirection)
+{
+	return false;
+}
+
+bool AZGPPlayerController::TryTriggerQuickAssist_Implementation()
+{
+	return false;
+}
+
 void AZGPPlayerController::HandleMove(const FInputActionValue& Value)
 {
 	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
@@ -280,6 +278,36 @@ void AZGPPlayerController::HandleParryTag(APawn* NewActiveCharacter, AActor* Par
 	}
 }
 
+void AZGPPlayerController::HandleChainAttackExecute()
+{
+	if (!m_pSquadManagerComponent) return;
+
+	AActor* ChainTarget = nullptr;
+	if (m_pChainAttackComponent)
+	{
+		ChainTarget = m_pChainAttackComponent->GetChainTarget();
+	}
+
+	if (ChainTarget)
+	{
+		m_pSquadManagerComponent->RequestChainAttack(ChainTarget);
+	}
+
+}
+
+void AZGPPlayerController::HandleChainAttackCancel()
+{
+}
+
+void AZGPPlayerController::HandleChainAttackFinish()
+{
+	if (m_pCurrentChainTarget.IsValid())
+	{
+		PauseDazeTimer(m_pCurrentChainTarget.Get(), false);
+		m_pCurrentChainTarget.Reset();
+	}
+}
+
 void AZGPPlayerController::HandleAttack()
 {
 	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
@@ -295,6 +323,12 @@ void AZGPPlayerController::HandleAttack()
 
 void AZGPPlayerController::HandleTag()
 {
+	// 체인 어택 우선
+	if (m_pChainAttackComponent && m_pChainAttackComponent->IsChainWaitingInput())
+	{
+		if (m_pChainAttackComponent->ExecuteChainAttack()) return;
+	}
+
 	// 1. 패리 가능하면 패리 우선
 	if (m_pParryDetectorComponent)
 	{
@@ -333,6 +367,10 @@ void AZGPPlayerController::HandleLockOn()
 	{
 		m_pTargetingComponent->ToggleLockOn();
 	}
+}
+
+void AZGPPlayerController::PauseDazeTimer(AActor* Target, bool bPause)
+{
 }
 
 
