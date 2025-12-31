@@ -48,6 +48,9 @@ protected:
 	void HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	UFUNCTION()
+	void HandleHitReactionStart(EHitReactionType ReactionType, bool bCancel);
+
+	UFUNCTION()
 	void HandleHitReactionEnd();
 
 public:

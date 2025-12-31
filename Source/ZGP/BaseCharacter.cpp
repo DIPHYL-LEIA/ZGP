@@ -36,6 +36,7 @@ void ABaseCharacter::BeginPlay()
 	}
 	if (m_pHitReactionComponent)
 	{
+		m_pHitReactionComponent->OnHitReactionStart.AddDynamic(this, &ABaseCharacter::HandleHitReactionStart);
 		m_pHitReactionComponent->OnHitReactionEnd.AddDynamic(this, &ABaseCharacter::HandleHitReactionEnd);
 	}
 }
@@ -73,10 +74,18 @@ void ABaseCharacter::HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted
 
 	if (m_pActionStateComponent && m_pActionStateComponent->IsTemporaryState())
 	{
-		if (IsActionState(EActionState::DEAD))
+		if (!IsActionState(EActionState::DEAD))
 		{
 			SetActionState(EActionState::IDLE);
 		}
+	}
+}
+
+void ABaseCharacter::HandleHitReactionStart(EHitReactionType ReactionType, bool bCancel)
+{
+	if (m_pActionStateComponent)
+	{
+		m_pActionStateComponent->SetHitStateCancel(bCancel);
 	}
 }
 

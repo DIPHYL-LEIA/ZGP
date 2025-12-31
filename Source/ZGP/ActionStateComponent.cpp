@@ -16,6 +16,7 @@ void UActionStateComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
 	m_currentState = EActionState::IDLE;
+	m_bHitStateCancel = false;
 }
 
 
@@ -27,6 +28,11 @@ void UActionStateComponent::SetActionState(EActionState NewState)
 	const EActionState OldState = m_currentState;
 
 	m_currentState = NewState;
+
+	if (OldState == EActionState::HIT)
+	{
+		m_bHitStateCancel = false;
+	}
 
 	OnStateChanged.Broadcast(OldState, m_currentState);
 }
@@ -50,6 +56,9 @@ bool UActionStateComponent::CanChangeActionState(EActionState NewState) const
 	{
 		if (NewState == EActionState::ATTACKING)
 			return true;
+		// 피격 중 다시 피격 허용
+		if (NewState == EActionState::HIT)
+			return true;
 		return false;
 	}
 
@@ -59,6 +68,12 @@ bool UActionStateComponent::CanChangeActionState(EActionState NewState) const
 	// 공격/회피 후 Idle 상태로 전환 가능 처리
 	if (NewState == EActionState::IDLE && IsTemporaryState())
 		return true;
+
+	// 피격 중 회피는 bCancel = true 일 때 허용
+	if (m_currentState == EActionState::HIT && NewState == EActionState::DODGING)
+	{
+		return m_bHitStateCancel;
+	}
 
 	int32 CurrentPriority = GetStatePriority(m_currentState);
 	int32 NewPriority = GetStatePriority(NewState);

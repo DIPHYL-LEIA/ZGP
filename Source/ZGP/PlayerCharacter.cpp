@@ -45,7 +45,7 @@ APlayerCharacter::APlayerCharacter()
 	bUseControllerRotationYaw = false;
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
 
 	// Component
 	m_pComboComp = CreateDefaultSubobject<UComboComponent>(TEXT("ComboComponent"));
@@ -305,9 +305,6 @@ void APlayerCharacter::OnUnTargeted_Implementation()
 
 void APlayerCharacter::ApplyCombatEffect_Implementation(const FDamageData& DamageData)
 {
-	UE_LOG(LogTemp, Log, TEXT("[Player] Hit Received! Invincible: %d"),
-		(m_pDodgeComp && m_pDodgeComp->IsInvincible()));
-
 	if (m_pDodgeComp && m_pDodgeComp->IsInvincible())
 	{
 		bool bSuccess = m_pDodgeComp->TryPerfectDodgeTrigger();
@@ -317,6 +314,9 @@ void APlayerCharacter::ApplyCombatEffect_Implementation(const FDamageData& Damag
 		}
 		return;
 	}
+
+	// HitReaction이 Light일 때 Hit 상태 진입하지 않음
+	if (DamageData.HitReaction == EHitReactionType::LIGHT) return;
 
 	Super::ApplyCombatEffect_Implementation(DamageData);
 }

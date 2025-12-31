@@ -16,7 +16,7 @@ enum class EHitDirection : uint8
 	RIGHT	UMETA(DisplayName = "Right")
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHitReactionStart, EHitReactionType, ReactionType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHitReactionStart, EHitReactionType, ReactionType, bool, bCancel);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHitReactionEnd);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )

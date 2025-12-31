@@ -16,7 +16,9 @@ void UHitReactionComponent::RunHitReaction(const FDamageData& DamageData)
 
 	EHitDirection Direction = CalculateHitDirection(DamageData.HitDirection);
 
-	OnHitReactionStart.Broadcast(DamageData.HitReaction);
+	bool bCancel = (DamageData.HitReaction == EHitReactionType::LIGHT);
+
+	OnHitReactionStart.Broadcast(DamageData.HitReaction, bCancel);
 
 	ApplyKnockback(DamageData.HitDirection, DamageData.HitReaction);
 	PlayHitMontage(DamageData.HitReaction, Direction);
@@ -61,6 +63,8 @@ void UHitReactionComponent::PlayHitMontage(EHitReactionType ReactionType, EHitDi
 	switch (ReactionType)
 	{
 	case EHitReactionType::LIGHT:
+		OnHitReactionEnd.Broadcast();
+		return;
 	case EHitReactionType::MEDIUM:
 		Montage = m_pHitLightMontage;
 		break;

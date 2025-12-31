@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DamageData.h"
 #include "AttackData.generated.h"
 
 USTRUCT(BlueprintType)
@@ -31,4 +32,7 @@ struct FAttackData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
 	bool bCanChainAttack = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
+	EHitReactionType HitReaction = EHitReactionType::LIGHT;
 };

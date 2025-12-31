@@ -35,12 +35,17 @@ public:
 	UFUNCTION(BlueprintPure, Category = "ActionState")
 	bool IsTemporaryState() const;
 
+	UFUNCTION(BlueprintCallable, Category = "ActionState")
+	void SetHitStateCancel(bool bCancel) { m_bHitStateCancel = bCancel; }
+
 	UPROPERTY(BlueprintAssignable, Category = "ActionState")
 	FOnActionStateChanged OnStateChanged;
 
 protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "ActionState", meta = (AllowPrivateAccess = "true"))
 	EActionState m_currentState;
+
+	bool m_bHitStateCancel = false;
 
 	// 멀티 플레이
 	//UFUNCTION()

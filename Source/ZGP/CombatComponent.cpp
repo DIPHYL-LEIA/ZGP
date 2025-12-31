@@ -109,8 +109,8 @@ void UCombatComponent::ApplyDamage(AActor* Target, const FAttackData& AttackData
 	DamageData.Attacker = Owner;
 	DamageData.HitLocation = HitResult.ImpactPoint;
 	DamageData.HitDirection = (Target->GetActorLocation() - Owner->GetActorLocation()).GetSafeNormal();
-	DamageData.HitReaction = EHitReactionType::LIGHT;
-	DamageData.bCanChainAttack = AttackData.bAllowMultiHit;
+	DamageData.HitReaction = AttackData.HitReaction;
+	DamageData.bCanChainAttack = AttackData.bCanChainAttack;
 
 	ICombatInteraction::Execute_ApplyCombatEffect(Target, DamageData);
 }
