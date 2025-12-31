@@ -16,6 +16,7 @@ class ZGP_API APlayerCharacter : public ABaseCharacter, public ITaggable, public
 public:
 	APlayerCharacter();
 
+	virtual void Tick(float DeltaTime) override;
 
 	void Move(const struct FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -70,6 +71,15 @@ private:
 	bool m_bPendingTagOut = false;
 	FTimerHandle ForceTagOutTimerHandle;
 
+	// 이동 보간 시스템
+	// 입력
+	FVector2D m_vRawInput = FVector2D::ZeroVector;
+	FVector2D m_vSmoothedInput = FVector2D::ZeroVector;
+
+	// 회전
+	FVector m_vLastDirection = FVector::ZeroVector;
+
+	float m_fCurrentSpeedMultiply = 1.0f;
 
 	UFUNCTION()
 	void HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted);

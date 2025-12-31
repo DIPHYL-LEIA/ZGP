@@ -45,11 +45,15 @@ APlayerCharacter::APlayerCharacter()
 	bUseControllerRotationYaw = false;
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
 
 	// Component
 	m_pComboComp = CreateDefaultSubobject<UComboComponent>(TEXT("ComboComponent"));
 	m_pDodgeComp = CreateDefaultSubobject<UDodgeComponent>(TEXT("DodgeComponent"));
+}
+
+void APlayerCharacter::Tick(float DeltaTime)
+{
 }
 
 void APlayerCharacter::BeginPlay()
