@@ -318,6 +318,7 @@ void UTargetingComponent::ChangeTarget(AActor* NewTarget)
 		ITargetable::Execute_OnTargeted(m_pCurrentTarget.Get(), bIsLock);
 	}
 
+	OnTargetChanged.Broadcast(NewTarget);
 }
 
 void UTargetingComponent::ReleaseLock()

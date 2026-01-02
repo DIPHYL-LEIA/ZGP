@@ -5,13 +5,14 @@
 #include "CoreMinimal.h"
 #include "BaseCharacter.h"
 #include "Targetable.h"
+#include "Dazeable.h"
 #include "EnemyCharacter.generated.h"
 
 /**
  *
  */
 UCLASS()
-class ZGP_API AEnemyCharacter : public ABaseCharacter, public ITargetable
+class ZGP_API AEnemyCharacter : public ABaseCharacter, public ITargetable, public IDazeable
 {
 	GENERATED_BODY()
 
@@ -28,6 +29,9 @@ public:
 	virtual FVector GetTargetLocation_Implementation() const override;
 	virtual void OnTargeted_Implementation(bool IsTargeted) override;
 	virtual void OnUnTargeted_Implementation() override;
+
+	virtual void PauseDazeTimer_Implementation(bool bPause) override;
+	virtual bool IsDazed_Implementation() const override;
 
 protected:
 	virtual void BeginPlay() override;

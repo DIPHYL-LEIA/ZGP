@@ -31,6 +31,7 @@ public:
 	virtual void OnTagIn_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation) override;
 	virtual void OnTagOut_Implementation() override;
 	virtual void OnTagOutAction_Implementation() override;
+	virtual void OnChainAttackTag_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation, AActor* TargetEnemy) override;
 
 	// Target
 	virtual bool IsTargetable_Implementation() const override;
@@ -59,6 +60,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UDodgeComponent> m_pDodgeComp;
+
+	UPROPERTY(EditDefaultsOnly)
+	FName m_ChainAttackSkillID = FName("ChainAttack");
 
 	UPROPERTY(EditDefaultsOnly)
 	FName m_ParryAttackSkillID = FName("ParryAttack");
@@ -96,6 +100,8 @@ private:
 
 	UFUNCTION()
 	void HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	void PerformTagIn(const FVector& TargetLocation, const FRotator& TargetRotation);
 
 	void ExecuteActionTagOut();
 	void SetActionTagOutState(bool bActive);

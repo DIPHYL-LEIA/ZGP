@@ -86,6 +86,52 @@ void APlayerCharacter::HandleActionMontageEnded(UAnimMontage* Montage, bool bInt
 	}
 }
 
+void APlayerCharacter::PerformTagIn(const FVector& TargetLocation, const FRotator& TargetRotation)
+{
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	// 기존 타이머 정리
+	World->GetTimerManager().ClearTimer(m_CameraLagTimerHandle);
+
+	// 1. 카메라 랙 비활성화
+	if (m_SpringArm)
+	{
+		// 복원 대기 중이 아닐 때만 원본 값 저장
+		if (!m_bCameraResetPending)
+		{
+			m_bCameraLag = m_SpringArm->bEnableCameraLag;
+			m_bCameraCollision = m_SpringArm->bDoCollisionTest;
+		}
+		m_bCameraResetPending = true;
+
+		m_SpringArm->bEnableCameraLag = false;
+		m_SpringArm->bDoCollisionTest = false;
+	}
+
+	// 2. 핵심 로직 (반드시 실행)
+	SetActorLocation(TargetLocation);
+	SetActorRotation(TargetRotation);
+
+	// 3. SpringArm Transform 강제 갱신 (B->A 튐 방지)
+	if (m_SpringArm)
+	{
+		m_SpringArm->UpdateChildTransforms();
+	}
+
+	SetActorHiddenInGame(false);
+	SetActorEnableCollision(true);
+	SetActionTagOutState(false);
+	SetActionState(EActionState::IDLE);
+
+	// 4. 카메라 복원 예약
+	if (m_SpringArm)
+	{
+		//World->GetTimerManager().SetTimer(m_CameraLagTimerHandle, this, &APlayerCharacter::ResetCameraSetting, 0.01f, false);
+		World->GetTimerManager().SetTimerForNextTick(this, &APlayerCharacter::ResetCameraSetting);
+	}
+}
+
 void APlayerCharacter::ExecuteActionTagOut()
 {
 	// 타이머 정리
@@ -201,48 +247,9 @@ bool APlayerCharacter::CanTag_Implementation() const
 
 void APlayerCharacter::OnTagIn_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation)
 {
-	UWorld* World = GetWorld();
-	if (!World) return;
+	PerformTagIn(TargetLocation, TargetRotation);
 
-	// 기존 타이머 정리
-	World->GetTimerManager().ClearTimer(m_CameraLagTimerHandle);
-
-	// 1. 카메라 랙 비활성화
-	if (m_SpringArm)
-	{
-		// 복원 대기 중이 아닐 때만 원본 값 저장
-		if (!m_bCameraResetPending)
-		{
-			m_bCameraLag = m_SpringArm->bEnableCameraLag;
-			m_bCameraCollision = m_SpringArm->bDoCollisionTest;
-		}
-		m_bCameraResetPending = true;
-
-		m_SpringArm->bEnableCameraLag = false;
-		m_SpringArm->bDoCollisionTest = false;
-	}
-
-	// 2. 핵심 로직 (반드시 실행)
-	SetActorLocation(TargetLocation);
-	SetActorRotation(TargetRotation);
-
-	// 3. SpringArm Transform 강제 갱신 (B->A 튐 방지)
-	if (m_SpringArm)
-	{
-		m_SpringArm->UpdateChildTransforms();
-	}
-
-	SetActorHiddenInGame(false);
-	SetActorEnableCollision(true);
-	SetActionTagOutState(false);
 	SetActionState(EActionState::IDLE);
-
-	// 4. 카메라 복원 예약
-	if (m_SpringArm)
-	{
-		//World->GetTimerManager().SetTimer(m_CameraLagTimerHandle, this, &APlayerCharacter::ResetCameraSetting, 0.01f, false);
-		World->GetTimerManager().SetTimerForNextTick(this, &APlayerCharacter::ResetCameraSetting);
-	}
 }
 
 void APlayerCharacter::OnTagOut_Implementation()
@@ -276,6 +283,18 @@ void APlayerCharacter::OnTagOutAction_Implementation()
 	if (World)
 	{
 		World->GetTimerManager().SetTimer(ForceTagOutTimerHandle, this, &APlayerCharacter::ExecuteActionTagOut, m_fForceTagOutDelay, false);
+	}
+}
+
+void APlayerCharacter::OnChainAttackTag_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation, AActor* TargetEnemy)
+{
+	PerformTagIn(TargetLocation, TargetRotation);
+	
+	SetActionState(EActionState::ATTACKING);
+
+	if (m_pSkillComponent)
+	{
+		m_pSkillComponent->ExecuteSkillID(m_ChainAttackSkillID);
 	}
 }
 

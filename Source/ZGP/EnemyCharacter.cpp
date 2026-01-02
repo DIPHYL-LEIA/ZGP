@@ -10,6 +10,7 @@
 #include "HealthComponent.h"
 #include "ActionStateProvider.h"
 #include "ActionState.h"
+#include "SquadAction.h"
 
 AEnemyCharacter::AEnemyCharacter()
 {
@@ -55,6 +56,23 @@ void AEnemyCharacter::OnUnTargeted_Implementation()
 {
 }
 
+void AEnemyCharacter::PauseDazeTimer_Implementation(bool bPause)
+{
+	if (m_pEnemyDazeComponent)
+	{
+		m_pEnemyDazeComponent->PauseDazeTimer(bPause);
+	}
+}
+
+bool AEnemyCharacter::IsDazed_Implementation() const
+{
+	if (m_pEnemyDazeComponent)
+	{
+		return m_pEnemyDazeComponent->IsDazed();
+	}
+	return false;
+}
+
 void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -80,6 +98,18 @@ void AEnemyCharacter::ApplyCombatEffect_Implementation(const FDamageData& Damage
 	{
 		if (DamageData.bCanChainAttack)
 		{
+			if (DamageData.Attacker.IsValid())
+			{
+				APawn* Attacker = Cast<APawn>(DamageData.Attacker.Get());
+				if (Attacker)
+				{
+					AController* AttackerController = Attacker->GetController();
+					if (AttackerController && AttackerController->Implements<USquadAction>())
+					{
+						ISquadAction::Execute_TryTriggerChainAttack(AttackerController, this);
+					}
+				}
+			}
 			m_pEnemyDazeComponent->TriggerChainAttack();
 		}
 	}

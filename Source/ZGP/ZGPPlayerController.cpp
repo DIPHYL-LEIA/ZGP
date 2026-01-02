@@ -15,6 +15,7 @@
 #include "TargetingComponent.h"
 #include "ChainAttackComponent.h"
 #include "Taggable.h"
+#include "Dazeable.h"
 
 #include "GameFramework/GameModeBase.h"
 
@@ -380,6 +381,10 @@ void AZGPPlayerController::HandleLockOn()
 
 void AZGPPlayerController::PauseDazeTimer(AActor* Target, bool bPause)
 {
+	if (Target && Target->Implements<UDazeable>())
+	{
+		IDazeable::Execute_PauseDazeTimer(Target, bPause);
+	}
 }
 
 

@@ -14,6 +14,8 @@ enum class ETargetingMode : uint8
 	HARD_LOCK	UMETA(DisplayName = "Hard Lock")
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTargetChanged, AActor*, NewTarget);
+
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class ZGP_API UTargetingComponent : public UActorComponent
 {
@@ -35,6 +37,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Targeting")
 	bool IsHardLock() const;
+
+	UPROPERTY(BlueprintAssignable, Category = "Targeting")
+	FOnTargetChanged OnTargetChanged;
 
 
 protected:
