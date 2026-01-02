@@ -143,6 +143,7 @@ void AZGPPlayerController::SetupInputComponent()
 		if (IA_Move)
 		{
 			EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AZGPPlayerController::HandleMove);
+			EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Completed, this, &AZGPPlayerController::HandleStopMove);
 		}
 
 		// Look ¹ÙÀÎµù
@@ -235,6 +236,14 @@ void AZGPPlayerController::HandleMove(const FInputActionValue& Value)
 	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
 	{
 		ControlledCharacter->Move(Value);
+	}
+}
+
+void AZGPPlayerController::HandleStopMove()
+{
+	if (APlayerCharacter* ControllerCharacter = GetPawn<APlayerCharacter>())
+	{
+		ControllerCharacter->StopMove();
 	}
 }
 

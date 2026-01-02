@@ -44,8 +44,10 @@ APlayerCharacter::APlayerCharacter()
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
+
+	GetCharacterMovement()->GroundFriction = 8.0f;
 
 	// Component
 	m_pComboComp = CreateDefaultSubobject<UComboComponent>(TEXT("ComboComponent"));
@@ -54,6 +56,9 @@ APlayerCharacter::APlayerCharacter()
 
 void APlayerCharacter::Tick(float DeltaTime)
 {
+	Super::Tick(DeltaTime);
+
+	UpdateMovementSmoothing(DeltaTime);
 }
 
 void APlayerCharacter::BeginPlay()
@@ -152,19 +157,12 @@ void APlayerCharacter::ResetCameraSetting()
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
-	const FVector2D MovementVector = Value.Get<FVector2D>();
+	m_vRawInput = Value.Get<FVector2D>();
+}
 
-	if (Controller != nullptr)
-	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
-	}
+void APlayerCharacter::StopMove()
+{
+	m_vRawInput = FVector2D::ZeroVector;
 }
 
 void APlayerCharacter::Look(const FInputActionValue& Value)
@@ -362,4 +360,121 @@ void APlayerCharacter::RequestParryAttack(AActor* ParriedEnemy)
 	{
 		m_pSkillComponent->ExecuteSkillID(m_ParryAttackSkillID);
 	}
+}
+
+
+void APlayerCharacter::UpdateMovementSmoothing(float DeltaTime)
+{
+	UpdateInputSmoothing(DeltaTime);
+
+	FVector MoveDirection = FVector::ZeroVector;
+
+	if (!m_vSmoothedInput.IsNearlyZero())
+	{
+		if (Controller != nullptr)
+		{
+			const FRotator ControlRotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0.f, ControlRotation.Yaw, 0.f);
+
+			const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+			const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+			MoveDirection = (ForwardDirection * m_vSmoothedInput.Y) + (RightDirection * m_vSmoothedInput.X);
+			MoveDirection.Z = 0.f;
+
+			if (!MoveDirection.IsNearlyZero())
+			{
+				MoveDirection.Normalize();
+			}
+		}
+	}
+
+	UpdateDirectionChange(DeltaTime, MoveDirection);
+
+	// 실제 입력이 있을 때만 회전 보간 적용
+	if (!m_vRawInput.IsNearlyZero() && !MoveDirection.IsNearlyZero())
+	{
+		const FQuat CurrentQuat = GetActorQuat();
+
+		const FRotator TargetRotator = MoveDirection.Rotation();
+		const FQuat TargetQuat = FQuat(FRotator(0.f, TargetRotator.Yaw, 0.f));
+
+		const FQuat NewQuat = FMath::QInterpTo(CurrentQuat, TargetQuat, DeltaTime, m_fInterpRotationSpeed);
+
+		SetActorRotation(NewQuat);
+	}
+
+	ApplyMovementSmoothing(MoveDirection);
+}
+
+void APlayerCharacter::UpdateInputSmoothing(float DeltaTime)
+{
+	m_vSmoothedInput.X = FMath::FInterpTo(m_vSmoothedInput.X, m_vRawInput.X, DeltaTime, m_fInterpInputSpeed);
+	m_vSmoothedInput.Y = FMath::FInterpTo(m_vSmoothedInput.Y, m_vRawInput.Y, DeltaTime, m_fInterpInputSpeed);
+}
+
+void APlayerCharacter::UpdateDirectionChange(float DeltaTime, const FVector& CurrentDirection)
+{
+	if (CurrentDirection.IsNearlyZero())
+	{
+		// 입력이 없을 시 속도 배율 회복
+		m_fCurrentSpeedMultiply = FMath::FInterpTo(m_fCurrentSpeedMultiply, 1.0f, DeltaTime, m_fBackSpeed);
+		return;
+	}
+
+	if (m_vLastDirection.IsNearlyZero())
+	{
+		// 첫 이동
+		m_vLastDirection = CurrentDirection;
+		m_fCurrentSpeedMultiply = 1.0f;
+		return;
+	}
+
+	// 이전 방향과 현재 방향 각도 계산
+	const float DirectionDot = FVector::DotProduct(m_vLastDirection, CurrentDirection);
+
+	// Dot = 1 , Dot = -1(반대)
+	float NormalizeDot = (DirectionDot + 1.0f) * 0.5f;		// 정규화 (0 ~ 1)
+
+	// 최저 속도와 최고 속도 보간
+	float Target = m_fMinSpeedDirectionChange + ((1.0f - m_fMinSpeedDirectionChange) * NormalizeDot);
+	Target = FMath::Clamp(Target, m_fMinSpeedDirectionChange, 1.0f);
+
+	// 급격한 방향 전환
+	if (Target < m_fMinSpeedDirectionChange)
+	{
+		// 즉시 감속
+		m_fCurrentSpeedMultiply = Target;
+	}
+	else
+	{
+		// 회복은 서서히
+		m_fCurrentSpeedMultiply = FMath::FInterpTo(m_fCurrentSpeedMultiply, Target, DeltaTime, m_fBackSpeed);
+	}
+
+	m_vLastDirection = CurrentDirection;
+}
+
+void APlayerCharacter::UpdateRotationSmoothing(float DeltaTime, const FVector& MoveDirection)
+{
+	if (MoveDirection.IsNearlyZero()) return;
+
+	const FRotator TargetRotation = MoveDirection.Rotation();
+	const FRotator CurrentRotation = GetActorRotation();
+
+	const FRotator NewRotation = FMath::RInterpTo(CurrentRotation, TargetRotation, DeltaTime, m_fInterpRotationSpeed);
+
+	SetActorRotation(FRotator(0.f, NewRotation.Yaw, 0.f));
+}
+
+void APlayerCharacter::ApplyMovementSmoothing(const FVector& MoveDirection)
+{
+	if (MoveDirection.IsNearlyZero()) return;
+
+	// 아날로그 스틱 지원
+	const float Input = FMath::Clamp(m_vSmoothedInput.Size(), 0.f, 1.f);
+
+	const float Scale = Input * m_fCurrentSpeedMultiply;
+
+	AddMovementInput(MoveDirection, Scale);
 }

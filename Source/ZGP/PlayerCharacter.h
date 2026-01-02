@@ -19,6 +19,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void Move(const struct FInputActionValue& Value);
+	void StopMove();
 	void Look(const FInputActionValue& Value);
 
 	void RequestAttack();
@@ -65,6 +66,18 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	float m_fForceTagOutDelay = 3.0f;
 
+	// 이동 보간
+	UPROPERTY(EditDefaultsOnly, Category = "MovementSmoothing")
+	float m_fInterpInputSpeed = 8.0;
+
+	UPROPERTY(EditDefaultsOnly, Category = "MovementSmoothing")
+	float m_fInterpRotationSpeed = 10.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "MovementSmoothing")
+	float m_fMinSpeedDirectionChange = 0.3f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "MovementSmoothing")
+	float m_fBackSpeed = 5.0f;
 
 private:
 	// 태그 시 남은 행동 처리
@@ -95,5 +108,12 @@ private:
 
 	UFUNCTION()
 	void ResetCameraSetting();
+
+	// 이동 보간 함수
+	void UpdateMovementSmoothing(float DeltaTime);
+	void UpdateInputSmoothing(float DeltaTime);
+	void UpdateDirectionChange(float DeltaTime, const FVector& CurrentDirection);
+	void UpdateRotationSmoothing(float DeltaTime, const FVector& MoveDirection);
+	void ApplyMovementSmoothing(const FVector& MoveDirection);
 
 };

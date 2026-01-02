@@ -75,6 +75,7 @@ protected:
 	int32 DefaultInputMappingPriority = 0;
 
 	void HandleMove(const struct FInputActionValue& Value);
+	void HandleStopMove();
 	void HandleLook(const FInputActionValue& Value);
 	void HandleJump();
 	void HandleStopJumping();
