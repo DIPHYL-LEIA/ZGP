@@ -99,4 +99,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Targeting")
 	bool m_bShowDebug = false;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Targeting")
+	TEnumAsByte<ECollisionChannel> m_eTargetChannel = ECC_GameTraceChannel2;	// Enemy
+
 };

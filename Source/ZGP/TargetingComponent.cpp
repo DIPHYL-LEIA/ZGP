@@ -118,8 +118,11 @@ void UTargetingComponent::SetSoftLock(const FVector& Location, const FVector& Fo
 		QueryParams.AddIgnoredActor(IgnoreActor);
 	}
 
-	World->OverlapMultiByChannel(
-		OverlapResults, Location, FQuat::Identity, ECC_Pawn/*적 채널*/,
+	FCollisionObjectQueryParams ObjectQueryParams;
+	ObjectQueryParams.AddObjectTypesToQuery(m_eTargetChannel);
+
+	World->OverlapMultiByObjectType(
+		OverlapResults, Location, FQuat::Identity, ObjectQueryParams/*적 채널*/,
 		FCollisionShape::MakeSphere(m_fSearchRadius), QueryParams);
 
 	if (m_bShowDebug)

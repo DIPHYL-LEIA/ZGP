@@ -18,18 +18,25 @@ AEnemyCharacter::AEnemyCharacter()
 
 	// Capsule Collision 
 	GetCapsuleComponent()->InitCapsuleSize(35.f, 90.f);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
 
 	// Mesh
 	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
 	GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
+	//GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	// Controller Rotation
 	bUseControllerRotationRoll = false;
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 
-	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
+	UCharacterMovementComponent* Movement = GetCharacterMovement();
+	if (Movement)
+	{
+		Movement->bOrientRotationToMovement = true;
+		Movement->RotationRate = FRotator(0.f, 500.f, 0.f);
+	}
+
 
 }
 

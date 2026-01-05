@@ -124,7 +124,7 @@ AActor* AEnemyAIController::FindNewTarget() const
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(MyPawn);
 
-	bool bHit = World->OverlapMultiByChannel(OverlapResults, MyLocation, FQuat::Identity, ECC_Pawn, FCollisionShape::MakeSphere(m_fSearchRadius), QueryParams);
+	bool bHit = World->OverlapMultiByObjectType(OverlapResults, MyLocation, FQuat::Identity, ECC_GameTraceChannel1, FCollisionShape::MakeSphere(m_fSearchRadius), QueryParams);
 	if (!bHit) return nullptr;
 
 	// 가장 가까운 타겟 선정

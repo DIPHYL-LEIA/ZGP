@@ -24,6 +24,7 @@ APlayerCharacter::APlayerCharacter()
 
 	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
 	GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, -0.f));
+	//GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	m_SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	m_SpringArm->SetupAttachment(RootComponent);
@@ -33,6 +34,7 @@ APlayerCharacter::APlayerCharacter()
 	m_SpringArm->SocketOffset = FVector(0.f, 50.f, 70.f);
 	m_SpringArm->bEnableCameraLag = true;
 	m_SpringArm->CameraLagSpeed = 10.f;
+	m_SpringArm->ProbeChannel = ECC_Visibility;
 
 	m_SpringArm->bDoCollisionTest = true;
 
