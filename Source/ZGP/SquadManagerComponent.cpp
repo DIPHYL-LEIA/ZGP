@@ -22,24 +22,12 @@ void USquadManagerComponent::BeginPlay()
 void USquadManagerComponent::InitializeSquad()
 {
 	UWorld* World = GetWorld();
-	if (!World)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[SquadManager] World is NULL"));
-		return;
-	}
+	if (!World) return;
 
 	APlayerController* PC = Cast<APlayerController>(GetOwner());
-	if (!PC)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[SquadManager] Owner is not PlayerController"));
-		return;
-	}
+	if (!PC) return;
 
-	if (m_arSquadCharacterClass.Num() == 0)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[SquadManager] No character classes assigned!"));
-		return;
-	}
+	if (m_arSquadCharacterClass.Num() == 0) return;
 
 	// 스폰 위치
 	FVector SpawnLocation = FVector::ZeroVector;
@@ -53,16 +41,7 @@ void USquadManagerComponent::InitializeSquad()
 		{
 			SpawnLocation = PlayerStart->GetActorLocation();
 			SpawnRotation = PlayerStart->GetActorRotation();
-			UE_LOG(LogTemp, Log, TEXT("[SquadManager] PlayerStart found at: %s"), *SpawnLocation.ToString());
 		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[SquadManager] PlayerStart NOT found! Using (0,0,0)"));
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[SquadManager] GameMode is NULL!"));
 	}
 
 	// 기존 Pawn 정리
