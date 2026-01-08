@@ -24,18 +24,6 @@ void UBarWidget::NativeConstruct()
 	m_fTargetPercent = 1.0f;
 	m_fGhostPercent = 1.0f;
 	m_bIsTickEnabled = false;
-
-
-	//// 값이 변할 때만 Tick 켜기
-
-	//if (CurrentBar)
-	//{
-	//	CurrentBar->SetPercent(m_fCurrentPercent);
-	//}
-	//if (GhostBar)
-	//{
-	//	GhostBar->SetPercent(m_fGhostPercent);
-	//}
 }
 
 void UBarWidget::NativeDestruct()

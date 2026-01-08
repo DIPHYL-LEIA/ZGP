@@ -39,6 +39,12 @@ protected:
 	virtual void InitializeComponent() override;
 
 public:
+	UFUNCTION()
+	float GetCurrentDaze() { return m_fCurrentDaze; }
+
+	UFUNCTION()
+	float GetMaxDaze() { return m_fMaxDaze; }
+
 	UFUNCTION(BlueprintCallable, Category = "Daze")
 	void TakeDaze(float Value);
 
