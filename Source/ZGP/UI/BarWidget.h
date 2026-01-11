@@ -30,6 +30,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Bar")
 	void SetBarColor(FLinearColor NewColor);
 
+	// Ghost Bar 사용
+	UFUNCTION(BlueprintCallable, Category = "Bar")
+	void SetUseGhostBar(bool bUseGhost);
+
+	UFUNCTION(BlueprintCallable, Category = "Bar")
+	bool IsUseGhostBar() const { return m_bUseGhostBar; }
+
+
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
@@ -45,20 +53,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Bar")
 	TObjectPtr<class UMaterialInterface> m_pBarMaterial;
 
-	// 보간 속도
-	UPROPERTY(EditDefaultsOnly, Category = "Bar")
-	float m_fGhostInterpSpeed = 3.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Bar")
-	float m_fGhostTolerance = 0.001f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Bar")
-	float m_fGhostDelay = 0.3f;
-
-	// Daze용 Ghost 반전
-	UPROPERTY(EditDefaultsOnly, Category = "Bar")
-	bool m_bInvertGhost = false;
-
 	// Bar 색상 
 	UPROPERTY(EditDefaultsOnly, Category = "Bar|Style")
 	FLinearColor m_CurrentBarColor = FLinearColor(0.0f, 0.85f, 0.65f, 1.0f);
@@ -67,10 +61,31 @@ protected:
 	FLinearColor m_GhostBarColor = FLinearColor(0.8f, 0.1f, 0.1f, 1.0f);
 
 	UPROPERTY(Transient, BlueprintReadOnly)
-	TObjectPtr<class UMaterialInstanceDynamic> m_pCurrentBarID;
+	TObjectPtr<class UMaterialInstanceDynamic> m_pCurrentBarMID;
 
 	UPROPERTY(Transient, BlueprintReadOnly)
-	TObjectPtr<UMaterialInstanceDynamic> m_pGhostBarID;
+	TObjectPtr<UMaterialInstanceDynamic> m_pGhostBarMID;
+
+	// Ghost Bar
+	UPROPERTY(EditAnywhere)
+	bool m_bUseGhostBar = true;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bar")
+	float m_fGhostDelay = 0.3f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bar")
+	float m_fGhostInterpSpeed = 3.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bar")
+	float m_fGhostTolerance = 0.001f;
+
+	// Daze용 Ghost 반전
+	UPROPERTY(EditDefaultsOnly, Category = "Bar")
+	bool m_bInvertGhost = false;
+
+	// 실제 시간 사용 여부
+	UPROPERTY(EditDefaultsOnly, Category = "Bar")
+	bool m_bUseRealTime = false;
 
 private:
 	float m_fCurrentPercent = 1.0f;
@@ -78,7 +93,6 @@ private:
 	float m_fGhostPercent = 1.0f;
 	float m_fGhostDelayTimer = 0.0f;
 	bool m_bGhostDelayActive = false;
-	bool m_bUseRealTime = false;
 	bool m_bIsTickEnabled = false;
 
 

@@ -30,8 +30,8 @@ void UBarWidget::NativeDestruct()
 {
 	EnableTick(false);
 
-	m_pCurrentBarID = nullptr;
-	m_pGhostBarID = nullptr;
+	m_pCurrentBarMID = nullptr;
+	m_pGhostBarMID = nullptr;
 
 	Super::NativeDestruct();
 
@@ -58,14 +58,14 @@ void UBarWidget::InitializeMaterials()
 	// Current Bar Material Instance
 	if (CurrentBar)
 	{
-		m_pCurrentBarID = UMaterialInstanceDynamic::Create(m_pBarMaterial, this);
-		if (m_pCurrentBarID)
+		m_pCurrentBarMID = UMaterialInstanceDynamic::Create(m_pBarMaterial, this);
+		if (m_pCurrentBarMID)
 		{
-			m_pCurrentBarID->SetScalarParameterValue(PARAM_PERCENT, m_fCurrentPercent);
-			m_pCurrentBarID->SetVectorParameterValue(PARAM_COLOR, m_CurrentBarColor);
+			m_pCurrentBarMID->SetScalarParameterValue(PARAM_PERCENT, m_fCurrentPercent);
+			m_pCurrentBarMID->SetVectorParameterValue(PARAM_COLOR, m_CurrentBarColor);
 
 			FSlateBrush Brush;
-			Brush.SetResourceObject(m_pCurrentBarID);
+			Brush.SetResourceObject(m_pCurrentBarMID);
 			CurrentBar->SetBrush(Brush);
 		}
 	}
@@ -73,15 +73,24 @@ void UBarWidget::InitializeMaterials()
 	// Ghost Bar Material Instance
 	if (GhostBar)
 	{
-		m_pGhostBarID = UMaterialInstanceDynamic::Create(m_pBarMaterial, this);
-		if (m_pGhostBarID)
+		if (m_bUseGhostBar)
 		{
-			m_pGhostBarID->SetScalarParameterValue(PARAM_PERCENT, m_fGhostPercent);
-			m_pGhostBarID->SetVectorParameterValue(PARAM_COLOR, m_GhostBarColor);
+			m_pGhostBarMID = UMaterialInstanceDynamic::Create(m_pBarMaterial, this);
+			if (m_pGhostBarMID)
+			{
+				m_pGhostBarMID->SetScalarParameterValue(PARAM_PERCENT, m_fGhostPercent);
+				m_pGhostBarMID->SetVectorParameterValue(PARAM_COLOR, m_GhostBarColor);
 
-			FSlateBrush Brush;
-			Brush.SetResourceObject(m_pGhostBarID);
-			GhostBar->SetBrush(Brush);
+				FSlateBrush Brush;
+				Brush.SetResourceObject(m_pGhostBarMID);
+				GhostBar->SetBrush(Brush);
+			}
+			GhostBar->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		}
+		else
+		{
+			// Ghost Bar º˚±Ë
+			GhostBar->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
 }
@@ -97,10 +106,12 @@ void UBarWidget::SetPercent(float NewPercent)
 
 	// CurrentBar ºº∆√
 	m_fCurrentPercent = NewPercent;
-	if (m_pCurrentBarID)
+	if (m_pCurrentBarMID)
 	{
-		m_pCurrentBarID->SetScalarParameterValue(PARAM_PERCENT, m_fCurrentPercent);
+		m_pCurrentBarMID->SetScalarParameterValue(PARAM_PERCENT, m_fCurrentPercent);
 	}
+
+	if (!m_bUseGhostBar) return;
 
 	// Ghost µø¿€ ∞·¡§
 	const bool bIsDecrease = (NewPercent < OldTargetPercent);
@@ -115,9 +126,9 @@ void UBarWidget::SetPercent(float NewPercent)
 	else
 	{
 		m_fGhostPercent = NewPercent;
-		if (m_pGhostBarID)
+		if (m_pGhostBarMID)
 		{
-			m_pGhostBarID->SetScalarParameterValue(PARAM_PERCENT, m_fGhostPercent);
+			m_pGhostBarMID->SetScalarParameterValue(PARAM_PERCENT, m_fGhostPercent);
 		}
 
 		if (FMath::IsNearlyEqual(m_fGhostPercent, m_fCurrentPercent, m_fGhostTolerance))
@@ -138,15 +149,15 @@ void UBarWidget::SetPercentNow(float NewPercent)
 	m_bGhostDelayActive = false;
 	m_fGhostDelayTimer = 0.0f;
 
-	if (m_pCurrentBarID)
+	if (m_pCurrentBarMID)
 	{
-		m_pCurrentBarID->SetScalarParameterValue(PARAM_PERCENT, m_fCurrentPercent);
+		m_pCurrentBarMID->SetScalarParameterValue(PARAM_PERCENT, m_fCurrentPercent);
 	}
-	if (m_pGhostBarID)
+	if (m_pGhostBarMID)
 	{
-		m_pGhostBarID->SetScalarParameterValue(PARAM_PERCENT, m_fGhostPercent);
+		m_pGhostBarMID->SetScalarParameterValue(PARAM_PERCENT, m_fGhostPercent);
 	}
-	
+
 	EnableTick(false);
 }
 
@@ -158,10 +169,44 @@ void UBarWidget::SetUseRealTime(bool bUseRealTime)
 void UBarWidget::SetBarColor(FLinearColor NewColor)
 {
 	m_CurrentBarColor = NewColor;
-	if (m_pCurrentBarID)
+	if (m_pCurrentBarMID)
 	{
-		m_pCurrentBarID->SetVectorParameterValue(PARAM_COLOR, NewColor);
+		m_pCurrentBarMID->SetVectorParameterValue(PARAM_COLOR, NewColor);
 	}
+}
+
+void UBarWidget::SetUseGhostBar(bool bUseGhost)
+{
+	if (m_bUseGhostBar == bUseGhost) return;
+
+	m_bUseGhostBar = bUseGhost;
+
+	if (GhostBar)
+	{
+		if (bUseGhost)
+		{
+			if (!m_pGhostBarMID && m_pBarMaterial)
+			{
+				m_pGhostBarMID = UMaterialInstanceDynamic::Create(m_pBarMaterial, this);
+				if (m_pGhostBarMID)
+				{
+					m_pGhostBarMID->SetScalarParameterValue(PARAM_PERCENT, m_fGhostPercent);
+					m_pGhostBarMID->SetVectorParameterValue(PARAM_COLOR, m_GhostBarColor);
+
+					FSlateBrush Brush;
+					Brush.SetResourceObject(m_pGhostBarMID);
+					GhostBar->SetBrush(Brush);
+				}
+				GhostBar->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+			}
+			else
+			{
+				GhostBar->SetVisibility(ESlateVisibility::Collapsed);
+				EnableTick(false);
+			}
+		}
+	}
+
 }
 
 
@@ -187,17 +232,17 @@ void UBarWidget::UpdateGhostBar(float DeltaTime)
 	{
 		m_fGhostPercent = FMath::FInterpTo(m_fGhostPercent, m_fTargetPercent, DeltaTime, m_fGhostInterpSpeed);
 
-		if (m_pGhostBarID)
+		if (m_pGhostBarMID)
 		{
-			m_pGhostBarID->SetScalarParameterValue(PARAM_PERCENT, m_fGhostPercent);
+			m_pGhostBarMID->SetScalarParameterValue(PARAM_PERCENT, m_fGhostPercent);
 		}
 	}
 	else
 	{
 		m_fGhostPercent = m_fTargetPercent;
-		if (m_pGhostBarID)
+		if (m_pGhostBarMID)
 		{
-			m_pGhostBarID->SetScalarParameterValue(PARAM_PERCENT, m_fGhostPercent);
+			m_pGhostBarMID->SetScalarParameterValue(PARAM_PERCENT, m_fGhostPercent);
 		}
 		EnableTick(false);
 	}
