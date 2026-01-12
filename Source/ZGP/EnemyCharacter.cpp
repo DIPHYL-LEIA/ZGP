@@ -17,6 +17,7 @@
 AEnemyCharacter::AEnemyCharacter()
 {
 	m_pEnemyDazeComponent = CreateDefaultSubobject<UEnemyDazeComponent>(TEXT("EnemyDazeComponent"));
+	m_pEnemyUIComponent = CreateDefaultSubobject<UEnemyUIComponent>(TEXT("EnemyUIComponent"));
 
 	// Capsule Collision 
 	GetCapsuleComponent()->InitCapsuleSize(35.f, 90.f);

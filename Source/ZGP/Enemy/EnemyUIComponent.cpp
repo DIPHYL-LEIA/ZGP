@@ -70,6 +70,8 @@ void UEnemyUIComponent::InitializeValue(float HealthPercent, float DazePercent)
 	{
 		m_pBarWidget->SetHealthNow(HealthPercent);
 		m_pBarWidget->SetDazeNow(DazePercent);
+
+		m_pBarWidget->UpdateDazeValue(0.f, 100.f);
 	}
 }
 
@@ -103,6 +105,11 @@ void UEnemyUIComponent::OnDazeChanged(float CurrentDaze, float MaxDaze)
 
 	if (m_pBarWidget.IsValid() && MaxDaze > 0.f)
 	{
+		if (MaxDaze > 0.f)
+		{
+			m_pBarWidget->UpdateDazeValue(CurrentDaze, MaxDaze);
+		}
+
 		m_pBarWidget->UpdateDaze(CurrentDaze / MaxDaze);
 	}
 }

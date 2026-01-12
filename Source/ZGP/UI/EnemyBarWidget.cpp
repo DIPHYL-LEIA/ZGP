@@ -3,6 +3,7 @@
 
 #include "EnemyBarWidget.h"
 #include "BarWidget.h"
+#include "Components/TextBlock.h"
 
 void UEnemyBarWidget::NativeConstruct()
 {
@@ -48,5 +49,14 @@ void UEnemyBarWidget::SetDazeNow(float Percent)
 	if (DazeBar)
 	{
 		DazeBar->SetPercentNow(Percent);
+	}
+}
+
+void UEnemyBarWidget::UpdateDazeValue(float CurrentDaze, float MaxDaze)
+{
+	if (DazeValue)
+	{
+		int32 DisplayValue = FMath::FloorToInt(CurrentDaze);
+		DazeValue->SetText(FText::AsNumber(DisplayValue));
 	}
 }

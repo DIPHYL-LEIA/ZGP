@@ -50,14 +50,14 @@ protected:
 	TObjectPtr<UImage> GhostBar;
 
 	//
-	UPROPERTY(EditDefaultsOnly, Category = "Bar")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bar")
 	TObjectPtr<class UMaterialInterface> m_pBarMaterial;
 
 	// Bar »ö»ó 
-	UPROPERTY(EditDefaultsOnly, Category = "Bar|Style")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bar Style")
 	FLinearColor m_CurrentBarColor = FLinearColor(0.0f, 0.85f, 0.65f, 1.0f);
 
-	UPROPERTY(EditDefaultsOnly, Category = "Bar|Style")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bar Style")
 	FLinearColor m_GhostBarColor = FLinearColor(0.8f, 0.1f, 0.1f, 1.0f);
 
 	UPROPERTY(Transient, BlueprintReadOnly)
@@ -65,6 +65,9 @@ protected:
 
 	UPROPERTY(Transient, BlueprintReadOnly)
 	TObjectPtr<UMaterialInstanceDynamic> m_pGhostBarMID;
+
+	UPROPERTY(EditAnywhere, Category = "Bar")
+	bool m_bUseCustomColor = false;
 
 	// Ghost Bar
 	UPROPERTY(EditAnywhere)

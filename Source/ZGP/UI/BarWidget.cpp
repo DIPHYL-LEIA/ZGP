@@ -62,8 +62,10 @@ void UBarWidget::InitializeMaterials()
 		if (m_pCurrentBarMID)
 		{
 			m_pCurrentBarMID->SetScalarParameterValue(PARAM_PERCENT, m_fCurrentPercent);
-			m_pCurrentBarMID->SetVectorParameterValue(PARAM_COLOR, m_CurrentBarColor);
-
+			if (m_bUseCustomColor)
+			{
+				m_pCurrentBarMID->SetVectorParameterValue(PARAM_COLOR, m_CurrentBarColor);
+			}
 			FSlateBrush Brush;
 			Brush.SetResourceObject(m_pCurrentBarMID);
 			CurrentBar->SetBrush(Brush);

@@ -27,6 +27,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "EnemyBar")
 	void SetDazeNow(float Percent);
 
+	UFUNCTION(BlueprintCallable, Category = "EnemyBar")
+	void UpdateDazeValue(float CurrentDaze, float MaxDaze);
+
 protected:
 	virtual void NativeConstruct() override;
 
@@ -36,4 +39,7 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	TObjectPtr<UBarWidget> DazeBar;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	TObjectPtr<class UTextBlock> DazeValue;
 };
