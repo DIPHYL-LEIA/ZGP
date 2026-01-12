@@ -94,6 +94,27 @@ APawn* USquadManagerComponent::GetFirstCharacter() const
 	return nullptr;
 }
 
+APawn* USquadManagerComponent::GetCharacterIndex(int32 Index) const
+{
+	if (m_arSquadCharacter.IsValidIndex(Index))
+	{
+		return m_arSquadCharacter[Index];
+	}
+	return nullptr;
+}
+
+TArray<int32> USquadManagerComponent::GetStandbyCharacterIndices() const
+{
+	TArray<int32> StandbyIndices;
+	for (int32 i = 0; i < m_arSquadCharacter.Num(); ++i)
+	{
+		if (i != m_nActiveCharacterIndex)
+		{
+			StandbyIndices.Add(i);
+		}
+	}
+	return StandbyIndices;
+}
 
 void USquadManagerComponent::RegisterCharacter(APawn* Character)
 {
@@ -108,19 +129,17 @@ void USquadManagerComponent::RegisterCharacter(APawn* Character)
 void USquadManagerComponent::RequestTag()
 {
 	if (m_arSquadCharacter.Num() < 2) return;
-	if (m_pActiveCharacter == nullptr)
-	{
-		m_pActiveCharacter = m_arSquadCharacter[0];
-	}
 
-	APawn* StandbyCharacter = (m_arSquadCharacter[0] == m_pActiveCharacter) ? m_arSquadCharacter[1] : m_arSquadCharacter[0];
+	int32 NextIndex = GetNextCharacterIndex();
+	APawn* NextCharacter = GetCharacterIndex(NextIndex);
 
-	if (m_pActiveCharacter == nullptr || StandbyCharacter == nullptr) return;
+	if (!m_pActiveCharacter || !NextCharacter) return;
 
 	if (ITaggable::Execute_CanTag(m_pActiveCharacter))
 	{
-		DoTag(StandbyCharacter, m_pActiveCharacter);
-		m_pActiveCharacter = StandbyCharacter;
+		DoTag(NextCharacter, m_pActiveCharacter);
+		m_nActiveCharacterIndex = NextIndex;
+		m_pActiveCharacter = NextCharacter;
 	}
 	else
 	{
@@ -133,45 +152,39 @@ void USquadManagerComponent::RequestParryTag(AActor* ParriedEnemy)
 {
 	if (m_arSquadCharacter.Num() < 2) return;
 
-	if (m_pActiveCharacter == nullptr)
-	{
-		m_pActiveCharacter = m_arSquadCharacter[0];
-	}
+	int32 NextIndex = GetNextCharacterIndex();
+	APawn* NextCharacter = GetCharacterIndex(NextIndex);
 
-	APawn* StandbyCharacter = (m_arSquadCharacter[0] == m_pActiveCharacter) ? m_arSquadCharacter[1] : m_arSquadCharacter[0];
-	if (m_pActiveCharacter == nullptr || StandbyCharacter == nullptr) return;
+	if (!m_pActiveCharacter || !NextCharacter) return;
 
-	APawn* PreviousCharacter = m_pActiveCharacter;
+	APawn* PrevCharacter = m_pActiveCharacter;
 
-	DoParryTag(StandbyCharacter, PreviousCharacter);
-	m_pActiveCharacter = StandbyCharacter;
+	DoParryTag(NextCharacter, PrevCharacter);
+	m_nActiveCharacterIndex = NextIndex;
+	m_pActiveCharacter = NextCharacter;
 
-	OnParryTagExecute.Broadcast(StandbyCharacter, ParriedEnemy);
+	OnParryTagExecute.Broadcast(NextCharacter, ParriedEnemy);
 
 	UE_LOG(LogTemp, Log, TEXT("[SquadManagerComponent] : Parry Tag Success"));
-
 }
 
-void USquadManagerComponent::RequestChainAttack(AActor* TargetEnemy)
+void USquadManagerComponent::RequestChainAttack(int32 SelectedIndex, AActor* TargetEnemy)
 {
 	if (m_arSquadCharacter.Num() < 2) return;
 	if (!TargetEnemy) return;
+	if (!m_arSquadCharacter.IsValidIndex(SelectedIndex)) return;
+	if (SelectedIndex == m_nActiveCharacterIndex) return;
 
-	if (m_pActiveCharacter == nullptr)
-	{
-		m_pActiveCharacter = m_arSquadCharacter[0];
-	}
+	APawn* SelectedCharacter = GetCharacterIndex(SelectedIndex);
+	if (!m_pActiveCharacter || !SelectedCharacter) return;
 
-	APawn* StandbyCharacter = (m_arSquadCharacter[0] == m_pActiveCharacter) ? m_arSquadCharacter[1] : m_arSquadCharacter[0];
+	APawn* PrevCharacter = m_pActiveCharacter;
 
-	if (!m_pActiveCharacter || !StandbyCharacter) return;
+	DoChainAttack(SelectedCharacter, PrevCharacter, TargetEnemy);
+	m_nActiveCharacterIndex = SelectedIndex;
+	m_pActiveCharacter = SelectedCharacter;
 
-	APawn* PreviousCharacter = m_pActiveCharacter;
-
-	DoChainAttack(StandbyCharacter, PreviousCharacter, TargetEnemy);
-	m_pActiveCharacter = StandbyCharacter;
-
-	OnChainAttackExecute.Broadcast(StandbyCharacter, TargetEnemy);
+	OnChainAttackExecute.Broadcast(SelectedCharacter, TargetEnemy);
 
 	UE_LOG(LogTemp, Warning, TEXT("[SquadManagerComponent] : Chain Attack Tag Success"));
 }
@@ -247,6 +260,12 @@ void USquadManagerComponent::DoChainAttack(APawn* InCharacter, APawn* OutCharact
 			PC->PlayerCameraManager->SetGameCameraCutThisFrame();
 		}
 	}
+}
+
+int32 USquadManagerComponent::GetNextCharacterIndex() const
+{
+	if (m_arSquadCharacter.Num() <= 1) return 0;
+	return (m_nActiveCharacterIndex + 1) % m_arSquadCharacter.Num();
 }
 
 void USquadManagerComponent::CalculateTagSpawnTransform(const APawn* BaseCharacter, FVector& OutLocation, FRotator& OutRotation) const

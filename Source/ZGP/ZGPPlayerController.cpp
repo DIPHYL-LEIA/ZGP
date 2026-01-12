@@ -134,6 +134,39 @@ void AZGPPlayerController::Tick(float DeltaTime)
 
 }
 
+void AZGPPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	// 새로 빙의한 캐릭터가 PlayerCharacter인지 확인
+	if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(InPawn))
+	{
+		PlayerCharacter->OnChainAttackSkillFinish.AddDynamic(this, &AZGPPlayerController::HandleChainAttackSkillFinish);
+	}
+}
+
+void AZGPPlayerController::OnUnPossess()
+{
+	APawn* InPawn = GetPawn();
+
+	if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(InPawn))
+	{
+		PlayerCharacter->OnChainAttackSkillFinish.RemoveDynamic(this, &AZGPPlayerController::HandleChainAttackSkillFinish);
+	}
+
+	Super::OnUnPossess();
+}
+
+void AZGPPlayerController::HandleChainAttackSkillFinish()
+{
+	// 체인 어택 상태일 때만 로직 수행
+	if (m_pChainAttackComponent && m_pChainAttackComponent->IsChainExecuteing())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Controller] Chain Attack Skill Finished -> FinishChainAttack()"));
+		m_pChainAttackComponent->FinishChainAttack();
+	}
+}
+
 void AZGPPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
@@ -232,6 +265,23 @@ bool AZGPPlayerController::TryTriggerQuickAssist_Implementation()
 	return false;
 }
 
+void AZGPPlayerController::SelectChainAttackCharacter(int32 SelectedIndex)
+{
+	if (!m_pChainAttackComponent) return;
+	if (!m_pChainAttackComponent->IsChainWaitingInput()) return;
+
+	// 체인 어택 실행
+	if (m_pChainAttackComponent->ExecuteChainAttack())
+	{
+		AActor* ChainTarget = m_pChainAttackComponent->GetChainTarget();
+
+		if (m_pSquadManagerComponent && ChainTarget)
+		{
+			m_pSquadManagerComponent->RequestChainAttack(SelectedIndex, ChainTarget);
+		}
+	}
+}
+
 void AZGPPlayerController::HandleMove(const FInputActionValue& Value)
 {
 	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
@@ -290,19 +340,6 @@ void AZGPPlayerController::HandleParryTag(APawn* NewActiveCharacter, AActor* Par
 
 void AZGPPlayerController::HandleChainAttackExecute()
 {
-	if (!m_pSquadManagerComponent) return;
-
-	AActor* ChainTarget = nullptr;
-	if (m_pChainAttackComponent)
-	{
-		ChainTarget = m_pChainAttackComponent->GetChainTarget();
-	}
-
-	if (ChainTarget)
-	{
-		m_pSquadManagerComponent->RequestChainAttack(ChainTarget);
-	}
-
 }
 
 void AZGPPlayerController::HandleChainAttackCancel()
@@ -336,7 +373,8 @@ void AZGPPlayerController::HandleTag()
 	// 체인 어택 우선
 	if (m_pChainAttackComponent && m_pChainAttackComponent->IsChainWaitingInput())
 	{
-		if (m_pChainAttackComponent->ExecuteChainAttack()) return;
+		// UI에서 처리하므로 아무것도 하지 않음
+		return;
 	}
 
 	// 1. 패리 가능하면 패리 우선

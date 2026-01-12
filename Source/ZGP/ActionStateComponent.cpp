@@ -51,6 +51,8 @@ bool UActionStateComponent::CanChangeActionState(EActionState NewState) const
 {
 	if (m_currentState == EActionState::DEAD) return false;
 
+	if (NewState == EActionState::DEAD) return true;
+
 	// 같은 상태로의 변화는 막되 공격은 허용(연타)
 	if (m_currentState == NewState)
 	{

@@ -29,14 +29,29 @@ public:
 	UFUNCTION()
 	APawn* GetActiveCharacter() const { return m_pActiveCharacter; }
 
+	UFUNCTION(BlueprintPure, Category = "Squad")
+	int32 GetActiveCharacterIndex() const { return m_nActiveCharacterIndex; };
+
+	UFUNCTION(BlueprintPure, Category = "Squad")
+	int32 GetSquadCount() const { return m_arSquadCharacter.Num(); }
+
+	UFUNCTION(BlueprintPure, Category = "Squad")
+	APawn* GetCharacterIndex(int32 Index) const;
+
+	// Chain Attack UI
+	UFUNCTION(BlueprintPure, Category = "Squad")
+	TArray<int32> GetStandbyCharacterIndices() const;
+
 	void RegisterCharacter(APawn* Character);
+
+	UFUNCTION(BlueprintCallable, Category = "Tag")
 	void RequestTag();
 
 	UFUNCTION(BlueprintCallable, Category = "Tag")
 	void RequestParryTag(AActor* ParriedEnemy);
 
 	UFUNCTION(BlueprintCallable, Category = "ChainAttack")
-	void RequestChainAttack(AActor* TargetEnemy);
+	void RequestChainAttack(int32 SelectedIndex, AActor* TargetEnemy);
 
 	UPROPERTY(BlueprintAssignable, Category = "Tag")
 	FOnParryTagExecute OnParryTagExecute;
@@ -57,11 +72,16 @@ protected:
 	UPROPERTY()
 	TObjectPtr<APawn> m_pActiveCharacter;
 
+	UPROPERTY(VisibleInstanceOnly, Category = "Squad")
+	int32 m_nActiveCharacterIndex = 0;
+
 	void DoTag(APawn* InCharacter, APawn* OutCharacter);
 	void DoParryTag(APawn* InCharacter, APawn* OutCharacter);
 	void DoChainAttack(APawn* InCharacter, APawn* OutCharacter, AActor* TargetEnemy);
 
 private:
+	int32 GetNextCharacterIndex() const;
+
 	void CalculateTagSpawnTransform(const APawn* BaseCharacter, FVector& OutLocation, FRotator& OutRotation) const;
 	void CalculateChainAttackSpawnTransform(AActor* TargetEnemy, FVector& OutLocation, FRotator& OutRotation) const;
 	bool ValidTagSpawnLocation(const FVector& Location, FVector& ValidLocation) const;

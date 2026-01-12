@@ -26,9 +26,18 @@ public:
 	virtual bool TryTriggerParryAssist_Implementation(AActor* Attacker, const FVector& AttackDirection) override;
 	virtual bool TryTriggerQuickAssist_Implementation() override;
 
+	// UI
+	UFUNCTION(BlueprintCallable, Category = "ChainAttack")
+	void SelectChainAttackCharacter(int32 SelectedIndex);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
+
+	UFUNCTION()
+	void HandleChainAttackSkillFinish();
 
 	// Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")

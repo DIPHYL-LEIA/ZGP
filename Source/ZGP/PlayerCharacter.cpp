@@ -74,6 +74,15 @@ void APlayerCharacter::BeginPlay()
 	}
 }
 
+void APlayerCharacter::HandleSkillMontageEnded()
+{
+	if (m_bIsChainAttack)
+	{
+		m_bIsChainAttack = false;
+		OnChainAttackSkillFinish.Broadcast();
+	}
+}
+
 void APlayerCharacter::HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
@@ -293,6 +302,8 @@ void APlayerCharacter::OnChainAttackTag_Implementation(const FVector& TargetLoca
 	PerformTagIn(TargetLocation, TargetRotation);
 	
 	SetActionState(EActionState::ATTACKING);
+
+	m_bIsChainAttack = true;
 
 	if (m_pSkillComponent)
 	{

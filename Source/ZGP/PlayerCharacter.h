@@ -8,6 +8,8 @@
 #include "Targetable.h"
 #include "PlayerCharacter.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChainAttackSkillFinish);
+
 UCLASS()
 class ZGP_API APlayerCharacter : public ABaseCharacter, public ITaggable, public ITargetable
 {
@@ -46,6 +48,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Parry")
 	void RequestParryAttack(AActor* ParriedEnemy);
 
+	UPROPERTY(BlueprintAssignable, Category = "Chain Attack")
+	FOnChainAttackSkillFinish OnChainAttackSkillFinish;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -82,6 +87,11 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "MovementSmoothing")
 	float m_fBackSpeed = 5.0f;
+
+	// Chain Attack State
+	bool m_bIsChainAttack = false;
+
+	void HandleSkillMontageEnded();
 
 private:
 	// 태그 시 남은 행동 처리
