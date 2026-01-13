@@ -6,6 +6,10 @@
 #include "DamageData.h"
 #include "AttackData.generated.h"
 
+/// <summary>
+/// 공격 데이터 구조체
+/// </summary>
+
 USTRUCT(BlueprintType)
 struct FAttackData
 {
@@ -21,6 +25,7 @@ struct FAttackData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
 	FVector Offset = FVector::ZeroVector;
 
+	// Damage
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
 	float DamageMultiply = 1.0f;
 
@@ -31,8 +36,20 @@ struct FAttackData
 	bool bAllowMultiHit = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
-	bool bCanChainAttack = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
 	EHitReactionType HitReaction = EHitReactionType::LIGHT;
+
+	/// <summary>
+	/// Heavy Attack이 true일 때, Stunned 상태의 적에게 공격 적중 시 Chain Attack 트리거 발동
+	/// 
+	/// Basic Attack 마지막 타격
+	/// Special / Ex Special
+	/// Ultimate
+	/// Dodge Counter
+	/// Assist Follow Up
+	/// Chain Attack
+	/// Parry Counter
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
+	bool bIsHeavyAttack = false;
+
 };

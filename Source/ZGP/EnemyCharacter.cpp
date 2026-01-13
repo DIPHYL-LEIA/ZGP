@@ -132,7 +132,7 @@ void AEnemyCharacter::ApplyCombatEffect_Implementation(const FDamageData& Damage
 	// Daze 상태에서 강공격 받을 시 Chain Attck
 	if (m_pEnemyDazeComponent && m_pEnemyDazeComponent->IsDazed())
 	{
-		if (DamageData.bCanChainAttack)
+		if (DamageData.bIsHeavyAttack)
 		{
 			if (DamageData.Attacker.IsValid())
 			{

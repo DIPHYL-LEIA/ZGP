@@ -52,7 +52,6 @@ void UCombatComponent::PerformAttackTrace(const FAttackData& AttackData)
 		{
 			if (m_setHitActors.Contains(HitActor))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("[CombatComp] SKIPPED - Already hit this actor"));
 				continue;
 			}
 			m_setHitActors.Add(HitActor);
@@ -96,11 +95,8 @@ void UCombatComponent::ApplyDamage(AActor* Target, const FAttackData& AttackData
 	UE_LOG(LogTemp, Warning, TEXT("[CombatComp] ApplyDamage Target: %s, Class: %s"),
 		*Target->GetName(), *Target->GetClass()->GetName());
 
-	if (!Target->Implements<UCombatInteraction>())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[CombatComp] Target does not implement ICombatInteraction"));
-		return;
-	}
+	if (!Target->Implements<UCombatInteraction>()) return;
+
 	AActor* Owner = GetOwner();
 
 	FDamageData DamageData;
@@ -110,7 +106,7 @@ void UCombatComponent::ApplyDamage(AActor* Target, const FAttackData& AttackData
 	DamageData.HitLocation = HitResult.ImpactPoint;
 	DamageData.HitDirection = (Target->GetActorLocation() - Owner->GetActorLocation()).GetSafeNormal();
 	DamageData.HitReaction = AttackData.HitReaction;
-	DamageData.bCanChainAttack = AttackData.bCanChainAttack;
+	DamageData.bIsHeavyAttack = AttackData.bIsHeavyAttack;
 
 	ICombatInteraction::Execute_ApplyCombatEffect(Target, DamageData);
 }
