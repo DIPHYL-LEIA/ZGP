@@ -2,80 +2,131 @@
 
 
 #include "SkillComponent.h"
-#include "GameFramework/Actor.h"	// GetOwner()
 #include "Engine/DataTable.h"
-#include "SkillData.h"
 #include "ComboData.h"
 #include "Animation/AnimMontage.h"
 
 USkillComponent::USkillComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-	bWantsInitializeComponent = true;	// ActionStateComponent보다 늦게 실행?
 }
 
-void USkillComponent::InitializeComponent()
+void USkillComponent::BeginPlay()
 {
-	Super::InitializeComponent();
-
-	if (m_pSkillDataTable == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("SkillComponent::InitializeComp - NO SkillTable"));
-	}
-	if (m_pComboDataTable == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("SkillComponent::InitializeComp - NO DataTable"));
-	}
-
+	Super::BeginPlay();
 }
 
-void USkillComponent::ExecuteComboAttack(int32 ComboStep)
+void USkillComponent::ExecuteComboAttack(int32 ComboIndex, bool bIsLastcombo)
 {
-	if (m_pSkillDataTable == nullptr || m_pComboDataTable == nullptr) return;
-	if (ComboStep <= 0) return;
+	FName SkillID = GetSkillIDFromComboIndex(ComboIndex);
 
-	const FComboData* pCombo = m_pComboDataTable->FindRow<FComboData>(m_currentComboID, TEXT("ExecuteComboAttack"));
-	if (pCombo == nullptr) return;
+	if (SkillID.IsNone()) return;
 
-	const FComboNode* ComboNode = pCombo->ComboNodes.Find(ComboStep);
-	if (ComboNode == nullptr) return;
-
-	const FName SkillId = ComboNode->SkillID;
-
-	const FSkillData* pSkillData = m_pSkillDataTable->FindRow<FSkillData>(SkillId, TEXT("ExecuteComboAttack"));
-	if (pSkillData == nullptr) return;
-
-	// 즉각 공격 반응을 위해 동기 로드 사용
-	UAnimMontage* pMontagePlay = pSkillData->Montage.LoadSynchronous();
-
-	if (pMontagePlay)
-	{
-		OnRequestPlayMontage.Broadcast(pMontagePlay);
-	}
-
+	// 마지막 콤보는 Heavy Attack 처리
+	ExecuteSkillInternal(SkillID, true, bIsLastcombo);
 }
 
 bool USkillComponent::ExecuteSkillID(FName SkillID)
 {
-	if (m_pSkillDataTable == nullptr) return false;
-	if (SkillID.IsNone()) return false;
+	return ExecuteSkillInternal(SkillID, false, false);
+}
 
-	const FSkillData* pSkillData = m_pSkillDataTable->FindRow<FSkillData>(SkillID, TEXT("ExecuteSkillID"));
-	if (pSkillData == nullptr) return false;
-
-	UAnimMontage* pMontage = pSkillData->Montage.LoadSynchronous();
-
-	if (pMontage)
-	{
-		OnRequestPlayMontage.Broadcast(pMontage);
-	}
+bool USkillComponent::CanExecuteSkill(FName SkillID) const
+{
+	const FSkillData* SkillData = FindSkillData(SkillID);
+	if (!SkillData) return false;
 
 	return true;
 }
 
+bool USkillComponent::IsCurrentSkillHeavy() const
+{
+	if (m_bIsCurrentLastCombo) return true;
+	
+	return false;
+}
+
+void USkillComponent::NotifyHeavyAttackHit(AActor* Target)
+{
+	if (!Target) return;
+
+	OnHeavyAttackHit.Broadcast(Target);
+}
+
+bool USkillComponent::GetCurrentSkillDataBP(FSkillData& Data) const
+{
+	if (m_pCurrentSkillData)
+	{
+		Data = *m_pCurrentSkillData;
+		return true;
+	}
+
+	return false;
+}
+
+ESkillType USkillComponent::GetCurrentSkillType() const
+{
+	if (m_pCurrentSkillData)
+	{
+		return m_pCurrentSkillData->SkillType;
+	}
+	return ESkillType::NONE;
+}
+
 void USkillComponent::NotifySkillCompleted()
 {
-	OnSkillCompleted.Broadcast();
+	m_CurrentSkillID = NAME_None;
+	m_pCurrentSkillData = nullptr;
+	m_bIsCurrentLastCombo = false;
+
+	OnSkillExecuteCompleted.Broadcast();
+}
+
+bool USkillComponent::ExecuteSkillInternal(FName SkillID, bool bOverrideHeavy, bool bIsHeavyOverride)
+{
+	if (SkillID.IsNone()) return false;
+
+	const FSkillData* SkillData = FindSkillData(SkillID);
+	if (!SkillData) return false;
+
+	UAnimMontage* Montage = SkillData->Montage.LoadSynchronous();
+	if (!Montage) return false;
+
+	m_CurrentSkillID = SkillID;
+	m_pCurrentSkillData = SkillData;
+	m_bIsCurrentLastCombo = bOverrideHeavy && bIsHeavyOverride;
+
+	// ------------------디버그----------------------
+	UE_LOG(LogTemp, Log, TEXT("[SkillComponent] Execute Skill: %s (Type: %d, LastCombo: %s)"),
+		*SkillID.ToString(),
+		static_cast<int32>(SkillData->SkillType),
+		m_bIsCurrentLastCombo ? TEXT("Yes") : TEXT("No"));
+
+	OnRequestPlayMontage.Broadcast(Montage);
+
+	return true;
+}
+
+FName USkillComponent::GetSkillIDFromComboIndex(int32 ComboIndex) const
+{
+	if (!m_pComboDataTable || m_ComboDataRowName.IsNone()) return NAME_None;
+
+	static const FString ContextString(TEXT("SkillComponent_GetSkillID"));
+	const FComboData* ComboData = m_pComboDataTable->FindRow<FComboData>(m_ComboDataRowName, ContextString);
+	if (!ComboData) return NAME_None;
+
+	const FComboNode* Node = ComboData->GetComboNode(ComboIndex);
+	if (!Node) return NAME_None;
+
+	return Node->SkillID;
+}
+
+const FSkillData* USkillComponent::FindSkillData(FName SkillID) const
+{
+	if (!m_pSkillDataTable) return nullptr;
+
+	static const FString ContextString(TEXT("SkillComponent_FindSkill"));
+	return m_pSkillDataTable->FindRow<FSkillData>(SkillID, ContextString);
 }
 
 

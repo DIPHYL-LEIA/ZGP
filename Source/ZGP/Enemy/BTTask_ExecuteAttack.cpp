@@ -33,13 +33,13 @@ EBTNodeResult::Type UBTTask_ExecuteAttack::ExecuteTask(UBehaviorTreeComponent& O
 
 	// 델리게이트 바인딩
 	m_pCacheBTComponent = &OwnerComp;
-	SkillComponent->OnSkillCompleted.AddDynamic(this, &UBTTask_ExecuteAttack::HandleSkillCompleted);
+	SkillComponent->OnSkillExecuteCompleted.AddDynamic(this, &UBTTask_ExecuteAttack::HandleSkillCompleted);
 
 	// 스킬 실행 요청
 	bool bStart = SkillComponent->ExecuteSkillID(Skill);
 	if (!bStart)
 	{
-		SkillComponent->OnSkillCompleted.RemoveDynamic(this, &UBTTask_ExecuteAttack::HandleSkillCompleted);
+		SkillComponent->OnSkillExecuteCompleted.RemoveDynamic(this, &UBTTask_ExecuteAttack::HandleSkillCompleted);
 		m_pCacheBTComponent.Reset();
 		return EBTNodeResult::Failed;
 
@@ -88,7 +88,7 @@ void UBTTask_ExecuteAttack::UnbindSkillDelegate(UBehaviorTreeComponent& OwnerCom
 	USkillComponent* SkillComponent = GetSkillComponent(OwnerComp);
 	if (SkillComponent)
 	{
-		SkillComponent->OnSkillCompleted.RemoveDynamic(this, &UBTTask_ExecuteAttack::HandleSkillCompleted);
+		SkillComponent->OnSkillExecuteCompleted.RemoveDynamic(this, &UBTTask_ExecuteAttack::HandleSkillCompleted);
 	}
 }
 

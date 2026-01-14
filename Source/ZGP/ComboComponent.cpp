@@ -9,101 +9,189 @@
 UComboComponent::UComboComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-
-	//bWantsInitializeComponent = true;
-
-	m_nCurrentComboStep = 0;
-	m_bIsComboWindowStart = false;
-	m_fComboResetTime = 1.3f;
 }
 
 void UComboComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	LoadComboData();
 
+}
+
+void UComboComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	ClearResetTimer();
+	Super::EndPlay(EndPlayReason);
+}
+
+void UComboComponent::OnAttackPressed()
+{
+	m_bIsAttackPressed = true;
+	m_fAttackPressTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+}
+
+void UComboComponent::OnAttackReleased()
+{
+	if (!m_bIsAttackPressed) return;
+	
+	m_bIsAttackPressed = false;
+
+	float CurrentTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+	float HoldDuration = CurrentTime - m_fAttackPressTime;
+	float HoldTime = GetCurrentHoldTime();
+
+	EInputAttackType InputType = (HoldDuration >= HoldTime) ? EInputAttackType::HOLD : EInputAttackType::TAP;
+
+	if (m_bIsInComboWindow)
+	{
+		m_bPendingInput = true;
+		m_ePendingInputType = InputType;
+	}
+	else if (!m_bIsComboActive)
+	{
+		ExecuteCombo(InputType);
+	}
 }
 
 void UComboComponent::RequestComboAttack()
 {
-	IActionStateProvider* Provider = GetActionStateProvider();
-	if (Provider == nullptr) return;
-
-	// Combo Start (0 -> 1)
-	if (m_nCurrentComboStep == 0)
+	if (m_bIsInComboWindow)
 	{
-		if (Provider->CanChangeActionState(EActionState::ATTACKING))
-		{
-			m_nCurrentComboStep = 1;
-			m_bIsComboWindowStart = false;
-
-			Provider->SetActionState(EActionState::ATTACKING);
-
-			// Skill Component에 Broadcast
-			OnPerformComboAttack.Broadcast(m_nCurrentComboStep);
-		}
-
-		// Combo Reset Timer
-		if (UWorld* World = GetWorld())
-		{
-			World->GetTimerManager().SetTimer(ComboResetTimer, this, &UComboComponent::HandleComboReset, m_fComboResetTime, false);
-		}
+		m_bPendingInput = true;
+		m_ePendingInputType = EInputAttackType::TAP;
 	}
-	// Combo Chain (1 -> 2 , 2 -> 3)
-	else if (m_bIsComboWindowStart)
+	else if (!m_bIsComboActive)
 	{
-		m_nCurrentComboStep++;
-		m_bIsComboWindowStart = false;
-
-		// Skill Component에 N단계 공격 실행
-		OnPerformComboAttack.Broadcast(m_nCurrentComboStep);
-
-		// Combo Reset Timer
-		if (UWorld* World = GetWorld())
-		{
-			World->GetTimerManager().SetTimer(ComboResetTimer, this, &UComboComponent::HandleComboReset, m_fComboResetTime, false);
-		}
+		ExecuteCombo(EInputAttackType::TAP);
 	}
 }
 
 void UComboComponent::StartComboWindow()
 {
-	if (m_nCurrentComboStep > 0)
+	m_bIsInComboWindow = true;
+	ClearResetTimer();
+
+	if (m_bPendingInput)
 	{
-		m_bIsComboWindowStart = true;
-		UE_LOG(LogTemp, Log, TEXT("Combo Window Open (Step : %d)"), m_nCurrentComboStep);
+		m_bPendingInput = false;
+		ExecuteCombo(m_ePendingInputType);
+	}
+}
+
+void UComboComponent::EndComboWindow()
+{
+	m_bIsInComboWindow = false;
+
+	if (m_bPendingInput)
+	{
+		m_bPendingInput = false;
+		ExecuteCombo(m_ePendingInputType);
+	}
+	else if (m_bIsComboActive)
+	{
+		StartResetTimer();
 	}
 }
 
 void UComboComponent::ResetCombo()
 {
-	UE_LOG(LogTemp, Log, TEXT("Last Combo Step (Step : %d)"), m_nCurrentComboStep);
+	ClearResetTimer();
 
-	m_nCurrentComboStep = 0;
-	m_bIsComboWindowStart = false;
+	int32 PrevIndex = m_nCurrentComboIndex;
 
-	if (UWorld* World = GetWorld())
+	m_nCurrentComboIndex = 0;
+	m_bIsInComboWindow = false;
+	m_bIsComboActive = false;
+	m_bPendingInput = false;
+
+	if (PrevIndex > 0)
 	{
-		World->GetTimerManager().ClearTimer(ComboResetTimer);
+		OnResetCombo.Broadcast();
 	}
+}
 
-	IActionStateProvider* Provider = GetActionStateProvider();
+void UComboComponent::LoadComboData()
+{
+	m_pComboDataTable = nullptr;
 
-	if (Provider && Provider->IsActionState(EActionState::ATTACKING))
+	if (!m_pComboDataTable || m_ComboDataRowName.IsNone()) return;
+
+	static const FString ContextString(TEXT("ComboComponent"));
+	m_pCachedComboData = m_pComboDataTable->FindRow<FComboData>(m_ComboDataRowName, ContextString);
+}
+
+void UComboComponent::ExecuteCombo(EInputAttackType InputType)
+{
+	ClearResetTimer();
+
+	if (!m_pCachedComboData || m_pCachedComboData->IsEmpty()) return;
+
+	int32 NextIndex = 0;
+
+	if (m_bIsComboActive)
 	{
-		if (Provider->CanChangeActionState(EActionState::IDLE))
+		NextIndex = m_pCachedComboData->GetNextComboIndex(m_nCurrentComboIndex, InputType);
+
+		if (NextIndex < 0 || !m_pCachedComboData->ComboChain.IsValidIndex(NextIndex))
 		{
-			Provider->SetActionState(EActionState::IDLE);
+			ResetCombo();
+			return;
 		}
 	}
+
+	const FComboNode* Node = m_pCachedComboData->GetComboNode(NextIndex);
+	if (!Node)
+	{
+		ResetCombo();
+		return;
+	}
+
+	m_nCurrentComboIndex = NextIndex;
+	m_bIsComboActive = true;
+	m_bIsInComboWindow = false;
+
+	OnPerformComboAttack.Broadcast(NextIndex, Node->bIsLastCombo);
 }
 
-IActionStateProvider* UComboComponent::GetActionStateProvider() const
+float UComboComponent::GetCurrentHoldTime() const
 {
-	return Cast<IActionStateProvider>(GetOwner());
+	if (m_pCachedComboData && m_bIsComboActive)
+	{
+		const FComboNode* Node = m_pCachedComboData->GetComboNode(m_nCurrentComboIndex);
+		if (Node && Node->bIsHold)
+		{
+			return Node->HoldTime;
+		}
+	}
+	return m_fDefaultHoldTime;
 }
 
-void UComboComponent::HandleComboReset()
+void UComboComponent::StartResetTimer()
 {
+	ClearResetTimer();
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	float ResetTimer = m_pCachedComboData ? m_pCachedComboData->ComboResetTime : 1.5f;
+
+	World->GetTimerManager().SetTimer(ComboResetTimerHandle, this, &UComboComponent::OnResetTimerExpired, ResetTimer, false);
+}
+
+void UComboComponent::ClearResetTimer()
+{
+	if (ComboResetTimerHandle.IsValid())
+	{
+		if (UWorld* World = GetWorld())
+		{
+			World->GetTimerManager().ClearTimer(ComboResetTimerHandle);
+		}
+		ComboResetTimerHandle.Invalidate();
+	}
+}
+
+void UComboComponent::OnResetTimerExpired()
+{
+	ComboResetTimerHandle.Invalidate();
 	ResetCombo();
 }
-
