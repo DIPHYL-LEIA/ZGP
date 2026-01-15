@@ -236,6 +236,15 @@ void AZGPPlayerController::SetCurrentTargetActor_Implementation(AActor* NewTarge
 	//}
 }
 
+bool AZGPPlayerController::IsTargetLock_Implementation() const
+{
+	if (m_pTargetingComponent)
+	{
+		return m_pTargetingComponent->IsHardLock();
+	}
+	return false;
+}
+
 bool AZGPPlayerController::TryTriggerChainAttack_Implementation(AActor* DazedEnemy)
 {
 	if (!m_pChainAttackComponent) return false;

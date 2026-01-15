@@ -21,6 +21,7 @@ public:
 
 	virtual AActor* GetCurrentTargetActor_Implementation() override;
 	virtual void SetCurrentTargetActor_Implementation(AActor* NewTarget) override;
+	virtual bool IsTargetLock_Implementation() const override;
 
 	virtual bool TryTriggerChainAttack_Implementation(AActor* DazedEnemy) override;
 	virtual bool TryTriggerParryAssist_Implementation(AActor* Attacker, const FVector& AttackDirection) override;

@@ -22,4 +22,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Targeting")
 	void SetCurrentTargetActor(AActor* NewTarget);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Targeting")
+	bool IsTargetLock() const;
 };

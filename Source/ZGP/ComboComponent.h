@@ -54,6 +54,7 @@ protected:
 	// 다음 입력 대기인지
 	bool m_bPendingInput = false;
 	bool m_bIsAttackPressed = false;
+	bool m_bIsLastCombo = false;
 	float m_fAttackPressTime = 0.f;
 	float m_fComboResetTimer = 0.f;
 	EInputAttackType m_ePendingInputType = EInputAttackType::TAP;

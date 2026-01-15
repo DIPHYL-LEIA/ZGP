@@ -41,6 +41,7 @@ bool USkillComponent::CanExecuteSkill(FName SkillID) const
 
 bool USkillComponent::IsCurrentSkillHeavy() const
 {
+	if (m_pCurrentSkillData && m_pCurrentSkillData->bIsHeavyAttack) return true;
 	if (m_bIsCurrentLastCombo) return true;
 	
 	return false;

@@ -33,7 +33,7 @@ void UComboComponent::OnAttackPressed()
 void UComboComponent::OnAttackReleased()
 {
 	if (!m_bIsAttackPressed) return;
-	
+
 	m_bIsAttackPressed = false;
 
 	float CurrentTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
@@ -44,11 +44,21 @@ void UComboComponent::OnAttackReleased()
 
 	if (m_bIsInComboWindow)
 	{
-		m_bPendingInput = true;
-		m_ePendingInputType = InputType;
+		// Window 안일 때 즉시 실행
+		ExecuteCombo(InputType);
 	}
-	else if (!m_bIsComboActive)
+	else if (m_bIsComboActive)
 	{
+		// Window 전 버퍼에 저장, 마지막 콤보 아닐 때만 선입력 허용
+		if (!m_bIsLastCombo)
+		{
+			m_bPendingInput = true;
+			m_ePendingInputType = InputType;
+		}
+	}
+	else
+	{
+		// Idle일 때 콤보 시작
 		ExecuteCombo(InputType);
 	}
 }
@@ -57,10 +67,19 @@ void UComboComponent::RequestComboAttack()
 {
 	if (m_bIsInComboWindow)
 	{
-		m_bPendingInput = true;
-		m_ePendingInputType = EInputAttackType::TAP;
+		//m_bPendingInput = true;
+		//m_ePendingInputType = EInputAttackType::TAP;
+		ExecuteCombo(EInputAttackType::TAP);
 	}
-	else if (!m_bIsComboActive)
+	else if (m_bIsComboActive)
+	{
+		if (!m_bIsLastCombo)
+		{
+			m_bPendingInput = true;
+			m_ePendingInputType = EInputAttackType::TAP;
+		}
+	}
+	else
 	{
 		ExecuteCombo(EInputAttackType::TAP);
 	}
@@ -82,14 +101,16 @@ void UComboComponent::EndComboWindow()
 {
 	m_bIsInComboWindow = false;
 
-	if (m_bPendingInput)
+	if (m_bIsComboActive)
 	{
-		m_bPendingInput = false;
-		ExecuteCombo(m_ePendingInputType);
-	}
-	else if (m_bIsComboActive)
-	{
-		StartResetTimer();
+		if (m_bIsLastCombo)
+		{
+			StartResetTimer();
+		}
+		else
+		{
+			StartResetTimer();
+		}
 	}
 }
 
@@ -103,6 +124,9 @@ void UComboComponent::ResetCombo()
 	m_bIsInComboWindow = false;
 	m_bIsComboActive = false;
 	m_bPendingInput = false;
+	m_bIsLastCombo = false;
+
+	m_bIsAttackPressed = false;
 
 	if (PrevIndex > 0)
 	{
@@ -112,7 +136,7 @@ void UComboComponent::ResetCombo()
 
 void UComboComponent::LoadComboData()
 {
-	m_pComboDataTable = nullptr;
+	m_pCachedComboData = nullptr;
 
 	if (!m_pComboDataTable || m_ComboDataRowName.IsNone()) return;
 
@@ -135,7 +159,7 @@ void UComboComponent::ExecuteCombo(EInputAttackType InputType)
 		if (NextIndex < 0 || !m_pCachedComboData->ComboChain.IsValidIndex(NextIndex))
 		{
 			ResetCombo();
-			return;
+			NextIndex = 0;
 		}
 	}
 
@@ -149,6 +173,10 @@ void UComboComponent::ExecuteCombo(EInputAttackType InputType)
 	m_nCurrentComboIndex = NextIndex;
 	m_bIsComboActive = true;
 	m_bIsInComboWindow = false;
+	m_bIsLastCombo = Node->bIsLastCombo;
+
+	UE_LOG(LogTemp, Log, TEXT("[ComboComponent] Execute Combo Index: %d, SkillID: %s, IsLast: %s"),
+		NextIndex, *Node->SkillID.ToString(), Node->bIsLastCombo ? TEXT("Yes") : TEXT("No"));
 
 	OnPerformComboAttack.Broadcast(NextIndex, Node->bIsLastCombo);
 }
