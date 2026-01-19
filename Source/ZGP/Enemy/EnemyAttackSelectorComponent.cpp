@@ -377,6 +377,38 @@ bool UEnemyAttackSelectorComponent::CanUseAttack(FName AttackID, float Distance,
 
 void UEnemyAttackSelectorComponent::UpdateCooldown()
 {
+	if (m_mapCooldownEnd.Num() == 0)
+	{
+		SetComponentTickEnabled(false);
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	float CurrentTime = World->GetTimeSeconds();
+	TArray<FName> CompleteCooldowns;
+
+	for (const auto& Pair : m_mapCooldownEnd)
+	{
+		if (CurrentTime >= Pair.Value)
+		{
+			CompleteCooldowns.Add(Pair.Key);
+		}
+	}
+
+	for (const FName& AttackID : CompleteCooldowns)
+	{
+		m_mapCooldownEnd.Remove(AttackID);
+		OnAttackCooldownComplete.Broadcast(AttackID);
+	}
+
+	// 쿨다운 모두 완료되면 Tick 비활성화
+	if (m_mapCooldownEnd.Num() == 0)
+	{
+		SetComponentTickEnabled(false);
+	}
+
 }
 
 float UEnemyAttackSelectorComponent::SetHPRatio() const
