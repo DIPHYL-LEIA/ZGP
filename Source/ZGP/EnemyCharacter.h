@@ -21,6 +21,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UEnemyUIComponent> m_pEnemyUIComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UEnemyAttackSelectorComponent> m_pEnemyAttackSelectorComponent;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy")
 	EEnemyType m_eEnemyType = EEnemyType::NORMAL;
 

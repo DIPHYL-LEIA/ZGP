@@ -422,8 +422,7 @@ float UEnemyAttackSelectorComponent::SetHPRatio() const
 	float MaxHP = HealthComponent->GetMaxHealth();
 	if (MaxHP <= 0.f) return 1.0f;
 
-
-	return 0.0f;
+	return HealthComponent->GetCurrentHealth() / MaxHP;
 }
 
 

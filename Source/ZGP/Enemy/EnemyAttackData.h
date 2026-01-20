@@ -65,6 +65,17 @@ enum class EAttackFlashType : uint8
 	MAX			UMETA(DisplayName = "Max"),
 };
 
+UENUM(BlueprintType)
+enum class EEnemyAttackSelectMode : uint8
+{
+	DISTANCE_BASE		UMETA(DisplayName = "Distance Base"),
+	RANDOM_WEIGHT		UMETA(DisplayName = "Random Weight"),
+	STEP_BASE			UMETA(DisplayName = "Step Base"),
+	PHASE_BASE			UMETA(DisplayName = "Phase Base"),
+	PRIORITY			UMETA(DisplayName = "Priority"),
+	MAX					UMETA(DisplayName = "Max")
+};
+
 
 /// <summary>
 /// 적 공격 데이터

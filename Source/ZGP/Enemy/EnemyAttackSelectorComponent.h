@@ -14,16 +14,16 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackCooldownComplete, FName, At
 /*
 * 공격 선택 모드
 */
-UENUM(BlueprintType)
-enum class EAttackSelectMode : uint8
-{
-	DISTANCE_BASE		UMETA(DisplayName = "Distance Base"),
-	RANDOM_WEIGHT		UMETA(DisplayName = "Random Weight"),
-	STEP_BASE			UMETA(DisplayName = "Step Base"),
-	PHASE_BASE			UMETA(DisplayName = "Phase Base"),
-	PRIORITY			UMETA(DisplayName = "Priority"),
-	MAX					UMETA(DisplayName = "Max")
-};
+//UENUM(BlueprintType)
+//enum class EAttackSelectMode : uint8
+//{
+//	DISTANCE_BASE		UMETA(DisplayName = "Distance Base"),
+//	RANDOM_WEIGHT		UMETA(DisplayName = "Random Weight"),
+//	STEP_BASE			UMETA(DisplayName = "Step Base"),
+//	PHASE_BASE			UMETA(DisplayName = "Phase Base"),
+//	PRIORITY			UMETA(DisplayName = "Priority"),
+//	MAX					UMETA(DisplayName = "Max")
+//};
 
 /*
 * 공격 선택 결과
@@ -133,7 +133,7 @@ protected:
 	FName m_PatternRowName;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Select")
-	EAttackSelectMode m_eDefaultSelectMode = EAttackSelectMode::DISTANCE_BASE;
+	EEnemyAttackSelectMode m_eDefaultSelectMode = EEnemyAttackSelectMode::DISTANCE_BASE;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Select")
 	bool m_bPreventRepeatAttack = true;

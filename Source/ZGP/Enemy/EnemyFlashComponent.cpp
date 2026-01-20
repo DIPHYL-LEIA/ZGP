@@ -2,10 +2,16 @@
 
 
 #include "EnemyFlashComponent.h"
+#include "GameFramework/Character.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+
 
 UEnemyFlashComponent::UEnemyFlashComponent()
 {
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
 void UEnemyFlashComponent::BeginPlay()
@@ -14,8 +20,28 @@ void UEnemyFlashComponent::BeginPlay()
 	
 }
 
-void UEnemyFlashComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UEnemyFlashComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	Super::EndPlay(EndPlayReason);
 }
 
+
+void UEnemyFlashComponent::TriggerFlash(EAttackFlashType FlashType, float Duration)
+{
+}
+
+void UEnemyFlashComponent::EndFlash()
+{
+}
+
+void UEnemyFlashComponent::StartNiagaraEffect(EAttackFlashType FlashType)
+{
+}
+
+void UEnemyFlashComponent::StopNiagaraEffect()
+{
+}
+
+void UEnemyFlashComponent::PlayFlashSound(EAttackFlashType FlashType)
+{
+}

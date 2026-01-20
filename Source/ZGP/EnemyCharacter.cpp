@@ -4,6 +4,7 @@
 #include "EnemyCharacter.h"
 #include "EnemyDazeComponent.h"
 #include "Enemy/EnemyUIComponent.h"
+#include "Enemy/EnemyAttackSelectorComponent.h"
 
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -18,6 +19,7 @@ AEnemyCharacter::AEnemyCharacter()
 {
 	m_pEnemyDazeComponent = CreateDefaultSubobject<UEnemyDazeComponent>(TEXT("EnemyDazeComponent"));
 	m_pEnemyUIComponent = CreateDefaultSubobject<UEnemyUIComponent>(TEXT("EnemyUIComponent"));
+	m_pEnemyAttackSelectorComponent = CreateDefaultSubobject<UEnemyAttackSelectorComponent>(TEXT("EnemyAttackSelectorComponent"));
 
 	// Capsule Collision 
 	GetCapsuleComponent()->InitCapsuleSize(35.f, 90.f);
