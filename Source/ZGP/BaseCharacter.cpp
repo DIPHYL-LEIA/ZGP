@@ -4,13 +4,12 @@
 #include "BaseCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UObject/ConstructorHelpers.h"
-#include "StatsComponent.h"
 #include "ActionStateComponent.h"
-#include "SkillComponent.h"
 #include "HealthComponent.h"
 #include "AttributeAnomalyComponent.h"
 #include "CombatComponent.h"
 #include "HitReactionComponent.h"
+#include "SkillExecutor.h"
 
 
 // Sets default values
@@ -19,7 +18,7 @@ ABaseCharacter::ABaseCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	m_pActionStateComponent = CreateDefaultSubobject<UActionStateComponent>(TEXT("ActionStateComponent"));
-	m_pSkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
+	//m_pSkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
 	m_pHealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	m_pAttributeAnomalyComponent = CreateDefaultSubobject<UAttributeAnomalyComponent>(TEXT("AttributeAnomalyComponent"));
 	m_pCombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
@@ -30,10 +29,10 @@ void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (m_pSkillComponent)
-	{
-		m_pSkillComponent->OnRequestPlayMontage.AddDynamic(this, &ABaseCharacter::HandlePlayMontage);
-	}
+	//if (m_pSkillComponent)
+	//{
+	//	m_pSkillComponent->OnRequestPlayMontage.AddDynamic(this, &ABaseCharacter::HandlePlayMontage);
+	//}
 	if (m_pHitReactionComponent)
 	{
 		m_pHitReactionComponent->OnHitReactionStart.AddDynamic(this, &ABaseCharacter::HandleHitReactionStart);
@@ -64,12 +63,11 @@ void ABaseCharacter::HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted
 		GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &ABaseCharacter::HandleMontageEnded);
 	}
 
-	if (m_pSkillComponent)
+	if (Implements<USkillExecutor>())
 	{
-		m_pSkillComponent->NotifySkillCompleted();
+		ISkillExecutor::Execute_NotifySkillCompleted(this);
 	}
 
-	//if (bInterrupted) return;
 	if (IsActionState(EActionState::HIT)) return;
 
 	if (m_pActionStateComponent && m_pActionStateComponent->IsTemporaryState())

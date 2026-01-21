@@ -5,6 +5,7 @@
 #include "EnemyDazeComponent.h"
 #include "Enemy/EnemyUIComponent.h"
 #include "Enemy/EnemyAttackSelectorComponent.h"
+#include "Enemy/EnemySkillComponent.h"
 
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -20,6 +21,8 @@ AEnemyCharacter::AEnemyCharacter()
 	m_pEnemyDazeComponent = CreateDefaultSubobject<UEnemyDazeComponent>(TEXT("EnemyDazeComponent"));
 	m_pEnemyUIComponent = CreateDefaultSubobject<UEnemyUIComponent>(TEXT("EnemyUIComponent"));
 	m_pEnemyAttackSelectorComponent = CreateDefaultSubobject<UEnemyAttackSelectorComponent>(TEXT("EnemyAttackSelectorComponent"));
+	m_pEnemySkillComponent = CreateDefaultSubobject<UEnemySkillComponent>(TEXT("EnemySkillComponent"));
+
 
 	// Capsule Collision 
 	GetCapsuleComponent()->InitCapsuleSize(35.f, 90.f);
@@ -43,6 +46,42 @@ AEnemyCharacter::AEnemyCharacter()
 	}
 
 
+}
+
+void AEnemyCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	BindUIComponent();
+
+	if (m_pEnemyDazeComponent)
+	{
+		m_pEnemyDazeComponent->OnDazed.AddDynamic(this, &AEnemyCharacter::HandleDaze);
+		m_pEnemyDazeComponent->OnDazeRecovered.AddDynamic(this, &AEnemyCharacter::HandleDazeRecovered);
+	}
+
+	if (m_pEnemySkillComponent)
+	{
+		m_pEnemySkillComponent->OnRequestPlayMontage.AddDynamic(this, &ABaseCharacter::HandlePlayMontage);
+	}
+
+	if (m_pEnemyUIComponent)
+	{
+		float HealthPercent = 1.0f;
+		float DazePercent = 0.0f;
+
+		if (m_pHealthComponent && m_pHealthComponent->GetMaxHealth() > 0.f)
+		{
+			HealthPercent = m_pHealthComponent->GetCurrentHealth() / m_pHealthComponent->GetMaxHealth();
+		}
+
+		if (m_pEnemyDazeComponent && m_pEnemyDazeComponent->GetMaxDaze() > 0.f)
+		{
+			DazePercent = m_pEnemyDazeComponent->GetCurrentDaze() / m_pEnemyDazeComponent->GetMaxDaze();
+		}
+
+		m_pEnemyUIComponent->InitializeValue(HealthPercent, DazePercent);
+	}
 }
 
 UEnemyDazeComponent* AEnemyCharacter::GetDazeComponent() const
@@ -98,36 +137,50 @@ bool AEnemyCharacter::IsDazed_Implementation() const
 	return false;
 }
 
-void AEnemyCharacter::BeginPlay()
+bool AEnemyCharacter::ExecuteSkillByID_Implementation(FName SkillID)
 {
-	Super::BeginPlay();
-
-	BindUIComponent();
-
-	if (m_pEnemyDazeComponent)
+	if (m_pEnemySkillComponent)
 	{
-		m_pEnemyDazeComponent->OnDazed.AddDynamic(this, &AEnemyCharacter::HandleDaze);
-		m_pEnemyDazeComponent->OnDazeRecovered.AddDynamic(this, &AEnemyCharacter::HandleDazeRecovered);
+		return m_pEnemySkillComponent->ExecuteAttack(SkillID);
 	}
+	return false;
+}
 
-	if (m_pEnemyUIComponent)
+bool AEnemyCharacter::IsExecuteSkill_Implementation() const
+{
+	if (m_pEnemySkillComponent)
 	{
-		float HealthPercent = 1.0f;
-		float DazePercent = 0.0f;
+		return m_pEnemySkillComponent->IsExecutingAttack();
+	}
+	return false;
+}
 
-		if (m_pHealthComponent && m_pHealthComponent->GetMaxHealth() > 0.f)
-		{
-			HealthPercent = m_pHealthComponent->GetCurrentHealth() / m_pHealthComponent->GetMaxHealth();
-		}
+bool AEnemyCharacter::IsCurrentSkillHeavy_Implementation() const
+{
+	if (m_pEnemySkillComponent)
+	{
+		return m_pEnemySkillComponent->IsCurrentAttackHeavy();
+	}
+	return false;
+}
 
-		if (m_pEnemyDazeComponent && m_pEnemyDazeComponent->GetMaxDaze() > 0.f)
-		{
-			DazePercent = m_pEnemyDazeComponent->GetCurrentDaze() / m_pEnemyDazeComponent->GetMaxDaze();
-		}
-
-		m_pEnemyUIComponent->InitializeValue(HealthPercent, DazePercent);
+void AEnemyCharacter::NotifySkillCompleted_Implementation()
+{
+	if (m_pEnemySkillComponent)
+	{
+		m_pEnemySkillComponent->NotifyAttackCompleted();
 	}
 }
+
+FName AEnemyCharacter::GetCurrentSkillID_Implementation() const
+{
+	if (m_pEnemySkillComponent)
+	{
+		return m_pEnemySkillComponent->GetCurrentAttackID();
+	}
+	return NAME_None;
+}
+
 
 void AEnemyCharacter::ApplyCombatEffect_Implementation(const FDamageData& DamageData)
 {

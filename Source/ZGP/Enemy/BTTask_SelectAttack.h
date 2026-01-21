@@ -25,19 +25,19 @@ protected:
 	virtual FString GetStaticDescription() const override;
 
 	UPROPERTY(EditAnywhere, Category = "Select Mode")
-	bool m_bSelectMode = false;
+	bool m_bOverrideEnemyType = false;
 
 	UPROPERTY(EditAnywhere, Category = "Select Mode")
 	EEnemyType m_eEnemyType = EEnemyType::NORMAL;
 
 	UPROPERTY(EditAnywhere, Category = "Select Mode")
-	FName m_FallbackAttakID = NAME_None;
+	FName m_FallbackAttackID = NAME_None;
 
 private:
 	FName SelectAttackNormal(class UEnemyAttackSelectorComponent* Selector, float Distance);
 	FName SelectAttackElite(class UEnemyAttackSelectorComponent* Selector, float Distance);
 	FName SelectAttackBoss(class UEnemyAttackSelectorComponent* Selector, float Distance);
 
-	class UEnemyAttackSelectorComponent* GetAttackSelector(UBehaviorTreeComponent& OwnerComp) const;
+	class UEnemyAttackSelectorComponent* GetAttackSelector(APawn* Pawn) const;
 	EEnemyType GetEnemyType(APawn* Pawn) const;
 };

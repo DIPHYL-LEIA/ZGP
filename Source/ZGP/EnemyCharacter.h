@@ -6,11 +6,12 @@
 #include "BaseCharacter.h"
 #include "Targetable.h"
 #include "Dazeable.h"
+#include "SkillExecutor.h"
 #include "Enemy/EnemyType.h"
 #include "EnemyCharacter.generated.h"
 
 UCLASS()
-class ZGP_API AEnemyCharacter : public ABaseCharacter, public ITargetable, public IDazeable
+class ZGP_API AEnemyCharacter : public ABaseCharacter, public ITargetable, public IDazeable, public ISkillExecutor	
 {
 	GENERATED_BODY()
 
@@ -24,6 +25,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UEnemyAttackSelectorComponent> m_pEnemyAttackSelectorComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UEnemySkillComponent> m_pEnemySkillComponent;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy")
 	EEnemyType m_eEnemyType = EEnemyType::NORMAL;
 
@@ -36,13 +40,22 @@ public:
 	UEnemyDazeComponent* GetDazeComponent() const;
 	class UEnemyUIComponent* GetUIComponent() const;
 
+	// Target
 	virtual bool IsTargetable_Implementation() const override;
 	virtual FVector GetTargetLocation_Implementation() const override;
 	virtual void OnTargeted_Implementation(bool IsTargeted) override;
 	virtual void OnUnTargeted_Implementation() override;
 
+	// Daze
 	virtual void PauseDazeTimer_Implementation(bool bPause) override;
 	virtual bool IsDazed_Implementation() const override;
+
+	// Skill
+	virtual bool ExecuteSkillByID_Implementation(FName SkillID) override;
+	virtual bool IsExecuteSkill_Implementation() const override;
+	virtual bool IsCurrentSkillHeavy_Implementation() const override;
+	virtual void NotifySkillCompleted_Implementation() override;
+	virtual FName GetCurrentSkillID_Implementation() const override;
 
 protected:
 	virtual void BeginPlay() override;

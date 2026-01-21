@@ -4,7 +4,8 @@
 #include "BTTask_ExecuteAttack.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "../SkillComponent.h"
+#include "EnemySkillComponent.h"
+#include "AIKeys.h"
 
 UBTTask_ExecuteAttack::UBTTask_ExecuteAttack()
 {
@@ -15,80 +16,83 @@ UBTTask_ExecuteAttack::UBTTask_ExecuteAttack()
 
 EBTNodeResult::Type UBTTask_ExecuteAttack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	USkillComponent* SkillComponent = GetSkillComponent(OwnerComp);
-	if (!SkillComponent) return EBTNodeResult::Failed;
+	FBTContext Context;
+	if (!GetBTContext(OwnerComp, Context, false)) return EBTNodeResult::Failed;
 
 	FName Skill = m_SkillID;
 
 	if (Skill.IsNone() && m_BlackboardKey.IsSet())
 	{
-		UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
-		if (BB)
+		if (Context.BB)
 		{
-			Skill = BB->GetValueAsName(m_BlackboardKey.SelectedKeyName);
+			Skill = Context.BB->GetValueAsName(m_BlackboardKey.SelectedKeyName);
 		}
 	}
 
 	if (Skill.IsNone()) return EBTNodeResult::Failed;
 
-	// 델리게이트 바인딩
+	// EnemySkillComponent
+	UEnemySkillComponent* EnemySkillComponent = GetEnemySkillComponent(Context.Pawn);
+	if (!EnemySkillComponent) return EBTNodeResult::Failed;
+
 	m_pCacheBTComponent = &OwnerComp;
-	SkillComponent->OnSkillExecuteCompleted.AddDynamic(this, &UBTTask_ExecuteAttack::HandleSkillCompleted);
+	m_pCachedPawn = Context.Pawn;
+
+	// 델리게이트 바인딩
+	EnemySkillComponent->OnAttackCompleted.AddDynamic(this, &UBTTask_ExecuteAttack::HandleAttackCompleted);
+
 
 	// 스킬 실행 요청
-	bool bStart = SkillComponent->ExecuteSkillID(Skill);
-	if (!bStart)
+	bool bSuccess = EnemySkillComponent->ExecuteAttack(Skill);
+	if (!bSuccess)
 	{
-		SkillComponent->OnSkillExecuteCompleted.RemoveDynamic(this, &UBTTask_ExecuteAttack::HandleSkillCompleted);
+		UnbindDelegate(Context.Pawn);
 		m_pCacheBTComponent.Reset();
+		m_pCachedPawn.Reset();
 		return EBTNodeResult::Failed;
-
 	}
 	return EBTNodeResult::InProgress;
 }
 
-void UBTTask_ExecuteAttack::HandleSkillCompleted()
+void UBTTask_ExecuteAttack::HandleAttackCompleted()
 {
-	// Task Instance 유효성 확인
-	if (m_pCacheBTComponent.IsValid())
+	if (m_pCacheBTComponent.IsValid() && m_pCachedPawn.IsValid())
 	{
-		UBehaviorTreeComponent* OwnerComp = m_pCacheBTComponent.Get();
-		// 정리
-		UnbindSkillDelegate(*OwnerComp);
-		// 트리 복귀
-		FinishLatentTask(*OwnerComp, EBTNodeResult::Succeeded);
+		UnbindDelegate(m_pCachedPawn.Get());
+		FinishLatentTask(*m_pCacheBTComponent.Get(), EBTNodeResult::Succeeded);
 	}
+
+	m_pCacheBTComponent.Reset();
+	m_pCachedPawn.Reset();
 }
 
 void UBTTask_ExecuteAttack::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTNodeResult::Type TaskResult)
 {
 	// 피격으로 BT가 강제 중단될 때 델리게이트 해제
-	UnbindSkillDelegate(OwnerComp);
+	if (m_pCachedPawn.IsValid())
+	{
+		UnbindDelegate(m_pCachedPawn.Get());
+	}
+
 	m_pCacheBTComponent.Reset();
+	m_pCachedPawn.Reset();
 
 	Super::OnTaskFinished(OwnerComp, NodeMemory, TaskResult);
 }
 
-USkillComponent* UBTTask_ExecuteAttack::GetSkillComponent(UBehaviorTreeComponent& OwnerComp) const
+UEnemySkillComponent* UBTTask_ExecuteAttack::GetEnemySkillComponent(APawn* Pawn) const
 {
-	AAIController* AIController = OwnerComp.GetAIOwner();
-	if (AIController)
-	{
-		APawn* MyPawn = AIController->GetPawn();
-		if (MyPawn)
-		{
-			return MyPawn->FindComponentByClass<USkillComponent>();
-		}
-	}
-	return nullptr;
+	if (!Pawn) return nullptr;
+	return Pawn->FindComponentByClass<UEnemySkillComponent>();
 }
 
-void UBTTask_ExecuteAttack::UnbindSkillDelegate(UBehaviorTreeComponent& OwnerComp)
+void UBTTask_ExecuteAttack::UnbindDelegate(APawn* Pawn)
 {
-	USkillComponent* SkillComponent = GetSkillComponent(OwnerComp);
-	if (SkillComponent)
+	if (!Pawn) return;
+	UEnemySkillComponent* EnemySkillComponent = GetEnemySkillComponent(Pawn);
+	if (EnemySkillComponent)
 	{
-		SkillComponent->OnSkillExecuteCompleted.RemoveDynamic(this, &UBTTask_ExecuteAttack::HandleSkillCompleted);
+		EnemySkillComponent->OnAttackCompleted.RemoveDynamic(this, &UBTTask_ExecuteAttack::HandleAttackCompleted);
 	}
 }
 

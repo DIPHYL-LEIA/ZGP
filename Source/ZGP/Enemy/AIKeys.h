@@ -16,4 +16,6 @@ namespace AIKeys
 	
 	const FName HasToken = TEXT("HasToken");
 	const FName TokenExpireTime = TEXT("TokenExpireTime");
+
+	const FName SelectAttackID = TEXT("SelectAttackID");
 }

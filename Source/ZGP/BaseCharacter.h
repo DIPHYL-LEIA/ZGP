@@ -26,8 +26,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UActionStateComponent> m_pActionStateComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class USkillComponent> m_pSkillComponent;
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	//TObjectPtr<class USkillComponent> m_pSkillComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UHealthComponent> m_pHealthComponent;
@@ -40,9 +40,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UHitReactionComponent> m_pHitReactionComponent;
-
-	UFUNCTION()
-	void HandlePlayMontage(UAnimMontage* MontagePlay);
 
 	UFUNCTION()
 	void HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted);
@@ -71,6 +68,9 @@ public:
 	// CombatAction
 	virtual void BeginAttack_Implementation() override;
 	virtual void EndAttack_Implementation() override;
+
+	UFUNCTION()
+	void HandlePlayMontage(UAnimMontage* MontagePlay);
 
 	UActionStateComponent* GetActionStateComponent() const;
 	UHealthComponent* GetHealthComponent() const;

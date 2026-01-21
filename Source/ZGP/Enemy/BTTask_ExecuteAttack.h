@@ -32,12 +32,12 @@ protected:
 
 private:
 	UFUNCTION()
-	void HandleSkillCompleted();
+	void HandleAttackCompleted();
 
-	class USkillComponent* GetSkillComponent(UBehaviorTreeComponent& OwnerComp) const;
-
-	void UnbindSkillDelegate(UBehaviorTreeComponent& OwnerComp);
+	class UEnemySkillComponent* GetEnemySkillComponent(APawn* Pawn) const;
+	void UnbindDelegate(APawn* Pawn);
 
 	TWeakObjectPtr<UBehaviorTreeComponent> m_pCacheBTComponent;
+	TWeakObjectPtr<APawn> m_pCachedPawn;
 
 };

@@ -132,6 +132,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
 	EHitReactionType HitReaction = EHitReactionType::LIGHT;
 
+	// HeavyAttack
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
+	bool bIsHeavyAttack = false;
+
+	bool IsHeavyAttack() const
+	{
+		if (bIsHeavyAttack) return true;
+		if (AttackType == EEnemyAttackType::MELEE_HEAVY) return true;
+		if (HitReaction == EHitReactionType::LAUNCH) return true;
+		return false;
+	}
+
 	// 랜덤 선택 시 가중치(높을수록 자주 선택됨)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Selection", meta = (ClampMin = "0.0"))
 	float SelectWeight = 1.0f;

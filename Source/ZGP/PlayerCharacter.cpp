@@ -24,7 +24,6 @@ APlayerCharacter::APlayerCharacter()
 
 	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
 	GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, -0.f));
-	//GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	m_SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	m_SpringArm->SetupAttachment(RootComponent);
@@ -52,6 +51,7 @@ APlayerCharacter::APlayerCharacter()
 	GetCharacterMovement()->GroundFriction = 8.0f;
 
 	// Component
+	m_pSkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
 	m_pComboComp = CreateDefaultSubobject<UComboComponent>(TEXT("ComboComponent"));
 	m_pDodgeComp = CreateDefaultSubobject<UDodgeComponent>(TEXT("DodgeComponent"));
 }
@@ -68,6 +68,10 @@ void APlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	// 두 컴포넌트의 델리게이트 바인딩
+	if (m_pSkillComponent)
+	{
+		m_pSkillComponent->OnRequestPlayMontage.AddDynamic(this, &ABaseCharacter::HandlePlayMontage);
+	}
 	if (m_pComboComp && m_pSkillComponent)
 	{
 		m_pComboComp->OnPerformComboAttack.AddDynamic(m_pSkillComponent, &USkillComponent::ExecuteComboAttack);
@@ -335,6 +339,52 @@ void APlayerCharacter::OnTargeted_Implementation(bool IsTargeted)
 
 void APlayerCharacter::OnUnTargeted_Implementation()
 {
+}
+
+bool APlayerCharacter::ExecuteSkillByID_Implementation(FName SkillID)
+{
+	if (m_pSkillComponent)
+	{
+		return m_pSkillComponent->ExecuteSkillID(SkillID);
+	}
+	return false;
+}
+
+bool APlayerCharacter::IsExecuteSkill_Implementation() const
+{
+	if (m_pSkillComponent)
+	{
+		return !m_pSkillComponent->GetCurrentSkillID().IsNone();
+	}
+
+	return false;
+}
+
+bool APlayerCharacter::IsCurrentSkillHeavy_Implementation() const
+{
+	if (m_pSkillComponent)
+	{
+		return m_pSkillComponent->IsCurrentSkillHeavy();
+	}
+	return false;
+}
+
+void APlayerCharacter::NotifySkillCompleted_Implementation()
+{
+	if (m_pSkillComponent)
+	{
+		m_pSkillComponent->NotifySkillCompleted();
+	}
+	HandleSkillMontageEnded();
+}
+
+FName APlayerCharacter::GetCurrentSkillID_Implementation() const
+{
+	if (m_pSkillComponent)
+	{
+		return m_pSkillComponent->GetCurrentSkillID();
+	}
+	return NAME_None;
 }
 
 void APlayerCharacter::ApplyCombatEffect_Implementation(const FDamageData& DamageData)

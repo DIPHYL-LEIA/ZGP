@@ -6,12 +6,13 @@
 #include "BaseCharacter.h"
 #include "Taggable.h"
 #include "Targetable.h"
+#include "SkillExecutor.h"
 #include "PlayerCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChainAttackSkillFinish);
 
 UCLASS()
-class ZGP_API APlayerCharacter : public ABaseCharacter, public ITaggable, public ITargetable
+class ZGP_API APlayerCharacter : public ABaseCharacter, public ITaggable, public ITargetable, public ISkillExecutor
 {
 	GENERATED_BODY()
 
@@ -41,12 +42,21 @@ public:
 	virtual void OnTargeted_Implementation(bool IsTargeted) override;
 	virtual void OnUnTargeted_Implementation() override;
 
+	// Skill
+	virtual bool ExecuteSkillByID_Implementation(FName SkillID) override;
+	virtual bool IsExecuteSkill_Implementation() const override;
+	virtual bool IsCurrentSkillHeavy_Implementation() const override;
+	virtual void NotifySkillCompleted_Implementation() override;
+	virtual FName GetCurrentSkillID_Implementation() const override;
+
 	// Dodge
 	virtual void ApplyCombatEffect_Implementation(const FDamageData& DamageData) override;
 	void RequestDodge();
 
 	UFUNCTION(BlueprintCallable, Category = "Parry")
 	void RequestParryAttack(AActor* ParriedEnemy);
+
+	class USkillComponent* GetSkillComponent() const { return m_pSkillComponent; }
 
 	UPROPERTY(BlueprintAssignable, Category = "Chain Attack")
 	FOnChainAttackSkillFinish OnChainAttackSkillFinish;
@@ -59,6 +69,11 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	TObjectPtr<class UCameraComponent> m_Camera;
+
+
+	// Component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class USkillComponent> m_pSkillComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UComboComponent> m_pComboComp;
