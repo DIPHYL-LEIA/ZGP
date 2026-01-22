@@ -10,21 +10,6 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttackSelect, FName, AttackID, const FEnemyAttackData&, AttackcData);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackCooldownComplete, FName, AttackID);
 
-
-/*
-* 공격 선택 모드
-*/
-//UENUM(BlueprintType)
-//enum class EAttackSelectMode : uint8
-//{
-//	DISTANCE_BASE		UMETA(DisplayName = "Distance Base"),
-//	RANDOM_WEIGHT		UMETA(DisplayName = "Random Weight"),
-//	STEP_BASE			UMETA(DisplayName = "Step Base"),
-//	PHASE_BASE			UMETA(DisplayName = "Phase Base"),
-//	PRIORITY			UMETA(DisplayName = "Priority"),
-//	MAX					UMETA(DisplayName = "Max")
-//};
-
 /*
 * 공격 선택 결과
 */

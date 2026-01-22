@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTService.h"
-#include "EnemyAIState.h"
 #include "BTService_UpdateState.generated.h"
 
 /**
@@ -20,4 +19,8 @@ public:
 
 protected:
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
+
+private:
+	void UpdateActionState(UBlackboardComponent* BB, class APawn* Pawn);
+	void UpdateTargetInfo(class UBlackboardComponent* BB, class AAIController* Controller, class APawn* Pawn);
 };

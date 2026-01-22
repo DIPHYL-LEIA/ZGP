@@ -21,7 +21,15 @@ EBTNodeResult::Type UBTTask_ExecuteAttack::ExecuteTask(UBehaviorTreeComponent& O
 
 	FName Skill = m_SkillID;
 
-	if (Skill.IsNone() && m_BlackboardKey.IsSet())
+	//if (Skill.IsNone() && m_BlackboardKey.IsSet())
+	//{
+	//	if (Context.BB)
+	//	{
+	//		Skill = Context.BB->GetValueAsName(m_BlackboardKey.SelectedKeyName);
+	//	}
+	//}
+
+	if (Skill.IsNone() && !m_BlackboardKey.SelectedKeyName.IsNone())
 	{
 		if (Context.BB)
 		{
@@ -29,7 +37,16 @@ EBTNodeResult::Type UBTTask_ExecuteAttack::ExecuteTask(UBehaviorTreeComponent& O
 		}
 	}
 
+	if (Skill.IsNone() && Context.BB)
+	{
+		Skill = Context.BB->GetValueAsName(AIKeys::SelectAttackID);
+	}
+
+	// BB에 저장된 모든 Name 값 확인
+	FName DirectCheck = Context.BB->GetValueAsName(TEXT("SelectAttackID"));
+
 	if (Skill.IsNone()) return EBTNodeResult::Failed;
+
 
 	// EnemySkillComponent
 	UEnemySkillComponent* EnemySkillComponent = GetEnemySkillComponent(Context.Pawn);

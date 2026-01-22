@@ -17,45 +17,22 @@ void UEnemySkillComponent::BeginPlay()
 
 bool UEnemySkillComponent::ExecuteAttack(FName AttackID)
 {
-	if (AttackID.IsNone())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[EnemySkillComponent] ExecuteAttack: AttackID is None"));
-		return false;
-	}
+	if (AttackID.IsNone()) return false;
 
 	const FEnemyAttackData* AttackData = FindAttackData(AttackID);
-	if (!AttackData)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[EnemySkillComponent] ExecuteAttack: AttackData not found for %s"), *AttackID.ToString());
-		return false;
-	}
+	if (!AttackData) return false;
 
 	UAnimMontage* Montage = AttackData->Montage.LoadSynchronous();
-	if (!Montage)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[EnemySkillComponent] ExecuteAttack: Montage is null for %s"), *AttackID.ToString());
-		return false;
-	}
+	if (!Montage) return false;
 
 	// 상태 업데이트
 	m_CurrentAttackID = AttackID;
 	m_pCurrentAttackData = AttackData;
 	m_bIsExecuting = true;
 
-	// 디버그 로그
-	UE_LOG(LogTemp, Log, TEXT("[EnemySkillComponent] Execute Attack: %s (Type: %d, Flash: %d, Heavy: %s)"),
-		*AttackID.ToString(),
-		static_cast<int32>(AttackData->AttackType),
-		static_cast<int32>(AttackData->FlashType),
-		IsCurrentAttackHeavy() ? TEXT("Yes") : TEXT("No"));
-
-	// 공격 시작 알림 (EnemyFlashComponent 등에서 구독)
 	OnAttackStarted.Broadcast(AttackID);
-
-	// 몽타주 재생 요청 (EnemyCharacter가 구독)
 	OnRequestPlayMontage.Broadcast(Montage);
 
-	// 쿨다운 시작 알림
 	NotifyCooldownStart(AttackID);
 
 	return true;

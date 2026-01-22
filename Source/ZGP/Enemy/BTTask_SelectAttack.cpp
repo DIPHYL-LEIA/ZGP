@@ -17,10 +17,10 @@ UBTTask_SelectAttack::UBTTask_SelectAttack()
 EBTNodeResult::Type UBTTask_SelectAttack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	FBTContext Context;
-	if (!GetBTContext(OwnerComp, Context, false)) return EBTNodeResult::Failed;
+	if (!GetBTContext(OwnerComp, Context, false))	return EBTNodeResult::Failed;
 
 	float Distance = Context.BB->GetValueAsFloat(AIKeys::TargetDistance);
-	if (Distance < 0.5)
+	if (Distance < 0.5f)
 	{
 		if (!m_FallbackAttackID.IsNone())
 		{
@@ -31,34 +31,33 @@ EBTNodeResult::Type UBTTask_SelectAttack::ExecuteTask(UBehaviorTreeComponent& Ow
 	}
 
 	UEnemyAttackSelectorComponent* EnemyAttackSelectorComponenet = GetAttackSelector(Context.Pawn);
-	if (!EnemyAttackSelectorComponenet) return EBTNodeResult::Failed;
+	if (!EnemyAttackSelectorComponenet)	return EBTNodeResult::Failed;
 
 	EEnemyType EnemyType = m_bOverrideEnemyType ? m_eEnemyType : GetEnemyType(Context.Pawn);
-
-	FName SelectedAttakID = NAME_None;
+	FName SelectAttakID = NAME_None;
 
 	switch (EnemyType)
 	{
 	case EEnemyType::NORMAL:
-		SelectedAttakID = SelectAttackNormal(EnemyAttackSelectorComponenet, Distance);
+		SelectAttakID = SelectAttackNormal(EnemyAttackSelectorComponenet, Distance);
 		break;
 	case EEnemyType::ELITE:
-		SelectedAttakID = SelectAttackElite(EnemyAttackSelectorComponenet, Distance);
+		SelectAttakID = SelectAttackElite(EnemyAttackSelectorComponenet, Distance);
 		break;
 	case EEnemyType::BOSS:
-		SelectedAttakID = SelectAttackBoss(EnemyAttackSelectorComponenet, Distance);
+		SelectAttakID = SelectAttackBoss(EnemyAttackSelectorComponenet, Distance);
 		break;
 	default:
-		SelectedAttakID = SelectAttackNormal(EnemyAttackSelectorComponenet, Distance);
+		SelectAttakID = SelectAttackNormal(EnemyAttackSelectorComponenet, Distance);
 		break;
 	}
 
 	// 선택 실패 Fallback
-	if (SelectedAttakID.IsNone())
+	if (SelectAttakID.IsNone())
 	{
 		if (!m_FallbackAttackID.IsNone())
 		{
-			SelectedAttakID = m_FallbackAttackID;
+			SelectAttakID = m_FallbackAttackID;
 		}
 		else
 		{
@@ -67,7 +66,7 @@ EBTNodeResult::Type UBTTask_SelectAttack::ExecuteTask(UBehaviorTreeComponent& Ow
 	}
 
 	// Blackboard에 저장
-	Context.BB->SetValueAsName(AIKeys::SelectAttackID, SelectedAttakID);
+	Context.BB->SetValueAsName(AIKeys::SelectAttackID, SelectAttakID);
 
 	return EBTNodeResult::Succeeded;
 }

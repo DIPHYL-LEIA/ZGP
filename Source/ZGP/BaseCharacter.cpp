@@ -18,7 +18,6 @@ ABaseCharacter::ABaseCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	m_pActionStateComponent = CreateDefaultSubobject<UActionStateComponent>(TEXT("ActionStateComponent"));
-	//m_pSkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
 	m_pHealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	m_pAttributeAnomalyComponent = CreateDefaultSubobject<UAttributeAnomalyComponent>(TEXT("AttributeAnomalyComponent"));
 	m_pCombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
@@ -29,10 +28,6 @@ void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//if (m_pSkillComponent)
-	//{
-	//	m_pSkillComponent->OnRequestPlayMontage.AddDynamic(this, &ABaseCharacter::HandlePlayMontage);
-	//}
 	if (m_pHitReactionComponent)
 	{
 		m_pHitReactionComponent->OnHitReactionStart.AddDynamic(this, &ABaseCharacter::HandleHitReactionStart);
