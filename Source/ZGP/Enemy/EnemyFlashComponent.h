@@ -7,12 +7,12 @@
 #include "EnemyAttackData.h"
 #include "EnemyFlashComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnAttackFlashTrigger, AActor*, Attacker, EAttackFlashType, FlashType, bool, bIsParryable);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackFlashEnd, AActor*, Attacker);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnFlashStart, EAttackFlashType, FlashType, FName, AttackID);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFlashEnd);
 
 /*
 * 패리 윈도우 관리는 AnimNotifyState_ParryWindow가 담당
-* 시각적 피드백만 담당
+* 시각 담당
 */
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ZGP_API UEnemyFlashComponent : public UActorComponent
@@ -23,67 +23,89 @@ public:
 	UEnemyFlashComponent();
 
 	UFUNCTION(BlueprintCallable, Category = "Flash")
-	void TriggerFlash(EAttackFlashType FlashType, float Duration = 0.f);
+	void StartFlash(EAttackFlashType FlashType, FName AttackID = NAME_None, float Duration = 0.f);
 
 	UFUNCTION(BlueprintCallable, Category = "Flash")
-	void EndFlash();
+	void StopFlash();
+
+	// 상태
+	UFUNCTION(BlueprintPure, Category = "Flash")
+	bool IsFlashing() const { return m_bIsFlashing; }
 
 	UFUNCTION(BlueprintPure, Category = "Flash")
-	EAttackFlashType GetCurrentFlash() const { return m_eCurrentFlashType; }
+	EAttackFlashType GetCurrentFlashType() const { return m_eCurrentFlashType; }
 
 	UFUNCTION(BlueprintPure, Category = "Flash")
-	bool IsFlashActive() const { return m_bFlashActive; }
+	bool IsParryableFlash() const { return m_bIsFlashing && m_eCurrentFlashType == EAttackFlashType::GOLD; }
 
 	UFUNCTION(BlueprintPure, Category = "Flash")
-	bool IsParryable() const { return m_bFlashActive && m_eCurrentFlashType == EAttackFlashType::GOLD; }
+	bool IsUnblockableFlash() const { return m_bIsFlashing && m_eCurrentFlashType == EAttackFlashType::RED; }
 
-	UPROPERTY(BlueprintAssignable)
-	FOnAttackFlashTrigger OnAttackFlashTrigger;
+	UPROPERTY()
+	FOnFlashStart OnFlashStart;
 
-	UPROPERTY(BlueprintAssignable)
-	FOnAttackFlashEnd OnAttackFlashEnd;
-
+	UPROPERTY()
+	FOnFlashEnd	OnFlashEnd;
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	/* 나이아가라 이펙트 */
-	UPROPERTY(EditDefaultsOnly, Category = "Niagara")
-	TObjectPtr<class UNiagaraSystem> m_pGoldFlashEffect;
+	// 나이아가라 이펙트
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<class UNiagaraSystem> m_pGoldFlashSystem;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Niagara")
-	TObjectPtr<UNiagaraSystem> m_pRedFlashEffect;
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UNiagaraSystem> m_pRedFlashSystem;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Niagara")
-	FName m_EffectSocketName = TEXT("WeaponSocket");
+	UPROPERTY(EditDefaultsOnly)
+	FName m_EffectAttachSocket = NAME_None;		// 부착 소켓 위치
 
-	UPROPERTY(EditDefaultsOnly, Category = "Niagara")
+	UPROPERTY(EditDefaultsOnly)
 	FVector m_EffectOffset = FVector(0.f, 0.f, 100.f);
 
-	/* 머티리얼(선택) */
+	UPROPERTY(EditDefaultsOnly)
+	FVector m_EffectScale = FVector(1.f);
 
-	/* 사운드 */
+	// 사운드
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<class USoundBase> m_pGoldFlashSound;
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<USoundBase> m_pRedFlashSound;
 
-	/* 지속 시간 */
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0", ClampMax = "2.0"))
+	float m_fSoundVolumeMultiplier = 1.0f;
+
+	// 타이밍
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.1"))
 	float m_fDefaultFlashDuration = 0.5f;
 
-private:
-	void StartNiagaraEffect(EAttackFlashType FlashType);
-	void StopNiagaraEffect();
-	void PlayFlashSound(EAttackFlashType FlashType);
+	UPROPERTY(EditDefaultsOnly)
+	bool m_bUseAutoStop = true;					// 자동 종료 사용 여부
 
-	bool m_bFlashActive = false;
+	// 자동 구독(EnemySkillComponent)
+	UPROPERTY(EditDefaultsOnly)
+	bool m_bAutoBindSkillComponent = true;
+
+private:
+	bool m_bIsFlashing = false;;
 	EAttackFlashType m_eCurrentFlashType = EAttackFlashType::NONE;
-	float m_fCurrentDuration = 0.f;
+	FName m_CurrentAttackID = NAME_None;
 
 	UPROPERTY()
-	TObjectPtr<class UNiagaraComponent> m_pActiveNiagaraComponent;
+	TObjectPtr<class UNiagaraComponent> m_pNiagaraComponent;
 
+	FTimerHandle m_FlashTimerHandle;
+
+	void SpawnNiagaraEffect(EAttackFlashType FlashType);
+	void CleanNiagaraEffect();
+	void PlayFlashSound(EAttackFlashType FlashType);
+	void OnFlashTimeExpired();
+	void BindSkillComponent();
+
+	UFUNCTION()
+	void HandleAttackStarted(FName AttackID);
+
+	EAttackFlashType GetFlashTypeAttack(FName AttackID) const;
 };

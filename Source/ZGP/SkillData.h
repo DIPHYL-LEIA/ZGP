@@ -56,7 +56,7 @@ public:
 	float DamageMultiply = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SkillData")
-	float DazeValue = 10.0f;
+	float DazeValue = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SkillData")
 	float AnomalyValue = 0.0f;
