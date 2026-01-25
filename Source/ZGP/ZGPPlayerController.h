@@ -106,6 +106,9 @@ protected:
 	void HandleTag();
 	void HandleLockOn();
 
+	UFUNCTION()
+	void HandleTargetChange(AActor* NewTarget);
+
 private:
 	UPROPERTY()
 	TWeakObjectPtr<AActor> m_pCurrentChainTarget;

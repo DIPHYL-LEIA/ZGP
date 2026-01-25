@@ -5,18 +5,18 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/Controller.h"
-#include "EnhancedInputComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/SkeletalMeshComponent.h"
 #include "TimerManager.h"
-
-#include "ZGPPlayerController.h"
-#include "InputAction.h"
+#include "InputActionValue.h"
 
 #include "ComboComponent.h"
 #include "SkillComponent.h"
 #include "DodgeComponent.h"
+#include "PlayerLocoComponent.h"
+#include "PlayerCameraComponent.h"
+
+#include "TargetProvider.h"
+#include "Targetable.h"
 
 APlayerCharacter::APlayerCharacter()
 {
@@ -25,6 +25,7 @@ APlayerCharacter::APlayerCharacter()
 	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
 	GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, -0.f));
 
+	// Spring Arm
 	m_SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	m_SpringArm->SetupAttachment(RootComponent);
 	m_SpringArm->TargetArmLength = 400.f;
@@ -37,6 +38,7 @@ APlayerCharacter::APlayerCharacter()
 
 	m_SpringArm->bDoCollisionTest = true;
 
+	// Camera
 	m_Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	m_Camera->SetupAttachment(m_SpringArm);
 	m_Camera->bUsePawnControlRotation = false;
@@ -47,20 +49,14 @@ APlayerCharacter::APlayerCharacter()
 
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
-
 	GetCharacterMovement()->GroundFriction = 8.0f;
 
 	// Component
 	m_pSkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
-	m_pComboComp = CreateDefaultSubobject<UComboComponent>(TEXT("ComboComponent"));
-	m_pDodgeComp = CreateDefaultSubobject<UDodgeComponent>(TEXT("DodgeComponent"));
-}
-
-void APlayerCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	UpdateMovementSmoothing(DeltaTime);
+	m_pComboComponent = CreateDefaultSubobject<UComboComponent>(TEXT("ComboComponent"));
+	m_pDodgeCompComponent = CreateDefaultSubobject<UDodgeComponent>(TEXT("DodgeComponent"));
+	m_pPlayerLocoComponent = CreateDefaultSubobject<UPlayerLocoComponent>(TEXT("PlayerLocoComponent"));
+	m_pPlayerCameraComponent = CreateDefaultSubobject<UPlayerCameraComponent>(TEXT("PlayerCameraComponent"));
 }
 
 void APlayerCharacter::BeginPlay()
@@ -72,56 +68,132 @@ void APlayerCharacter::BeginPlay()
 	{
 		m_pSkillComponent->OnRequestPlayMontage.AddDynamic(this, &ABaseCharacter::HandlePlayMontage);
 	}
-	if (m_pComboComp && m_pSkillComponent)
+	if (m_pComboComponent && m_pSkillComponent)
 	{
-		m_pComboComp->OnPerformComboAttack.AddDynamic(m_pSkillComponent, &USkillComponent::ExecuteComboAttack);
+		m_pComboComponent->OnPerformComboAttack.AddDynamic(m_pSkillComponent, &USkillComponent::ExecuteComboAttack);
+	}
+
+	if (m_pPlayerCameraComponent && m_SpringArm)
+	{
+		m_pPlayerCameraComponent->SetSpringArm(m_SpringArm);
 	}
 }
 
-void APlayerCharacter::HandleSkillMontageEnded()
+void APlayerCharacter::Tick(float DeltaTime)
 {
-	if (m_bIsChainAttack)
-	{
-		m_bIsChainAttack = false;
-		OnChainAttackSkillFinish.Broadcast();
-	}
+	Super::Tick(DeltaTime);
 }
 
-void APlayerCharacter::HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+void APlayerCharacter::Move(const FInputActionValue& Value)
 {
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance)
+	if (m_pPlayerLocoComponent)
 	{
-		AnimInstance->OnMontageEnded.RemoveDynamic(this, &APlayerCharacter::HandleActionMontageEnded);
-	}
-
-	if (m_bPendingTagOut)
-	{
-		ExecuteActionTagOut();
+		m_pPlayerLocoComponent->SetRawInput(Value.Get<FVector2D>());
 	}
 }
+
+void APlayerCharacter::StopMove()
+{
+	if (m_pPlayerLocoComponent)
+	{
+		m_pPlayerLocoComponent->ClearInput();
+	}
+}
+
+void APlayerCharacter::Look(const FInputActionValue& Value)
+{
+	// Hard Lock 시 마우스 회전 무시
+	if (IsHardLock()) return;
+
+	const FVector2D LookAxisVector = Value.Get<FVector2D>();
+
+	if (Controller != nullptr)
+	{
+		AddControllerYawInput(LookAxisVector.X);
+		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+void APlayerCharacter::RequestAttack()
+{
+	// 공격 전 타겟 방향 흡착 준비
+	AActor* Target = GetCurrentTarget();
+	if (m_pPlayerLocoComponent && Target)
+	{
+		m_pPlayerLocoComponent->StartAttackHoming(Target);
+	}
+
+	if (m_pComboComponent)
+	{
+		m_pComboComponent->RequestComboAttack();
+	}
+}
+
+void APlayerCharacter::RequestDodge()
+{
+	if (!m_pDodgeCompComponent) return;
+
+	FVector DodgeDirection = FVector::ZeroVector;
+	DodgeDirection = GetLastMovementInputVector();
+
+	m_pDodgeCompComponent->RequestDodge(DodgeDirection);
+}
+
+void APlayerCharacter::SetHardLockTarget(AActor* Target)
+{
+	if (m_pPlayerLocoComponent)
+	{
+		m_pPlayerLocoComponent->SetHardLockTarget(Target);
+	}
+
+	if (m_pPlayerCameraComponent)
+	{
+		m_pPlayerCameraComponent->SetHardLockTarget(Target);
+	}
+}
+
+void APlayerCharacter::ClearHardLockTarget()
+{
+	if (m_pPlayerLocoComponent)
+	{
+		m_pPlayerLocoComponent->ClearHardLockTarget();
+	}
+
+	if (m_pPlayerCameraComponent)
+	{
+		m_pPlayerCameraComponent->ClearHardLockTarget();
+	}
+}
+
+AActor* APlayerCharacter::GetCurrentTarget() const
+{
+	AController* PC = GetController();
+	if (PC && PC->Implements<UTargetProvider>())
+	{
+		return ITargetProvider::Execute_GetCurrentTargetActor(PC);
+	}
+	return nullptr;
+}
+
+bool APlayerCharacter::IsHardLock() const
+{
+	AController* PC = GetController();
+	if (PC && PC->Implements<UTargetProvider>())
+	{
+		return ITargetProvider::Execute_IsTargetLock(PC);
+	}
+	return false;
+}
+
 
 void APlayerCharacter::PerformTagIn(const FVector& TargetLocation, const FRotator& TargetRotation)
 {
 	UWorld* World = GetWorld();
 	if (!World) return;
 
-	// 기존 타이머 정리
-	World->GetTimerManager().ClearTimer(m_CameraLagTimerHandle);
-
-	// 1. 카메라 랙 비활성화
-	if (m_SpringArm)
+	if (m_pPlayerCameraComponent)
 	{
-		// 복원 대기 중이 아닐 때만 원본 값 저장
-		if (!m_bCameraResetPending)
-		{
-			m_bCameraLag = m_SpringArm->bEnableCameraLag;
-			m_bCameraCollision = m_SpringArm->bDoCollisionTest;
-		}
-		m_bCameraResetPending = true;
-
-		m_SpringArm->bEnableCameraLag = false;
-		m_SpringArm->bDoCollisionTest = false;
+		m_pPlayerCameraComponent->StopCameraLagTemporary();
 	}
 
 	// 2. 핵심 로직 (반드시 실행)
@@ -140,10 +212,15 @@ void APlayerCharacter::PerformTagIn(const FVector& TargetLocation, const FRotato
 	SetActionState(EActionState::IDLE);
 
 	// 4. 카메라 복원 예약
-	if (m_SpringArm)
+	if (m_pPlayerCameraComponent)
 	{
-		//World->GetTimerManager().SetTimer(m_CameraLagTimerHandle, this, &APlayerCharacter::ResetCameraSetting, 0.01f, false);
-		World->GetTimerManager().SetTimerForNextTick(this, &APlayerCharacter::ResetCameraSetting);
+		World->GetTimerManager().SetTimerForNextTick([this]()
+			{
+				if (m_pPlayerCameraComponent)
+				{
+					m_pPlayerCameraComponent->RestoreCameraLag();
+				}
+			});
 	}
 }
 
@@ -167,22 +244,18 @@ void APlayerCharacter::ExecuteActionTagOut()
 
 	// 상태 복원 후 숨김
 	SetActionTagOutState(false);
-
 	SetActorHiddenInGame(true);
 	SetActorEnableCollision(false);
-
 	SetActionState(EActionState::IDLE);
-
-	UE_LOG(LogTemp, Log, TEXT("[PlayerCharacter] : %s : Deferred Tag Out Complete"), *GetName());
 }
 
 void APlayerCharacter::SetActionTagOutState(bool bActive)
 {
 	if (bActive)
 	{
-		if (m_pDodgeComp)
+		if (m_pDodgeCompComponent)
 		{
-			m_pDodgeComp->SetInvincible(true);
+			m_pDodgeCompComponent->SetInvincible(true);
 		}
 
 		UCapsuleComponent* Capsule = GetCapsuleComponent();
@@ -193,9 +266,9 @@ void APlayerCharacter::SetActionTagOutState(bool bActive)
 	}
 	else
 	{
-		if (m_pDodgeComp)
+		if (m_pDodgeCompComponent)
 		{
-			m_pDodgeComp->SetInvincible(false);
+			m_pDodgeCompComponent->SetInvincible(false);
 		}
 
 		UCapsuleComponent* Capsule = GetCapsuleComponent();
@@ -206,42 +279,31 @@ void APlayerCharacter::SetActionTagOutState(bool bActive)
 	}
 }
 
-void APlayerCharacter::ResetCameraSetting()
+void APlayerCharacter::HandleSkillMontageEnded()
 {
-	if (m_SpringArm)
+	// 공격 흡착 해제
+	if (m_pPlayerLocoComponent)
 	{
-		m_SpringArm->bEnableCameraLag = m_bCameraLag;
-		m_SpringArm->bDoCollisionTest = m_bCameraCollision;
+		m_pPlayerLocoComponent->StopAttackHoming();
 	}
-	m_bCameraResetPending = false;
-}
-
-void APlayerCharacter::Move(const FInputActionValue& Value)
-{
-	m_vRawInput = Value.Get<FVector2D>();
-}
-
-void APlayerCharacter::StopMove()
-{
-	m_vRawInput = FVector2D::ZeroVector;
-}
-
-void APlayerCharacter::Look(const FInputActionValue& Value)
-{
-	const FVector2D LookAxisVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
+	if (m_bIsChainAttack)
 	{
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
+		m_bIsChainAttack = false;
+		OnChainAttackSkillFinish.Broadcast();
 	}
 }
 
-void APlayerCharacter::RequestAttack()
+void APlayerCharacter::HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (m_pComboComp)
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
 	{
-		m_pComboComp->RequestComboAttack();
+		AnimInstance->OnMontageEnded.RemoveDynamic(this, &APlayerCharacter::HandleActionMontageEnded);
+	}
+
+	if (m_bPendingTagOut)
+	{
+		ExecuteActionTagOut();
 	}
 }
 
@@ -304,7 +366,7 @@ void APlayerCharacter::OnTagOutAction_Implementation()
 void APlayerCharacter::OnChainAttackTag_Implementation(const FVector& TargetLocation, const FRotator& TargetRotation, AActor* TargetEnemy)
 {
 	PerformTagIn(TargetLocation, TargetRotation);
-	
+
 	SetActionState(EActionState::ATTACKING);
 
 	m_bIsChainAttack = true;
@@ -389,9 +451,9 @@ FName APlayerCharacter::GetCurrentSkillID_Implementation() const
 
 void APlayerCharacter::ApplyCombatEffect_Implementation(const FDamageData& DamageData)
 {
-	if (m_pDodgeComp && m_pDodgeComp->IsInvincible())
+	if (m_pDodgeCompComponent && m_pDodgeCompComponent->IsInvincible())
 	{
-		bool bSuccess = m_pDodgeComp->TryPerfectDodgeTrigger();
+		bool bSuccess = m_pDodgeCompComponent->TryPerfectDodgeTrigger();
 		if (bSuccess)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("[Player] Perfect Dodge executed!"));
@@ -403,16 +465,6 @@ void APlayerCharacter::ApplyCombatEffect_Implementation(const FDamageData& Damag
 	if (DamageData.HitReaction == EHitReactionType::LIGHT) return;
 
 	Super::ApplyCombatEffect_Implementation(DamageData);
-}
-
-void APlayerCharacter::RequestDodge()
-{
-	if (!m_pDodgeComp) return;
-
-	FVector DodgeDirection = FVector::ZeroVector;
-	DodgeDirection = GetLastMovementInputVector();
-
-	m_pDodgeComp->RequestDodge(DodgeDirection);
 }
 
 void APlayerCharacter::RequestParryAttack(AActor* ParriedEnemy)
@@ -442,121 +494,4 @@ void APlayerCharacter::RequestParryAttack(AActor* ParriedEnemy)
 	{
 		m_pSkillComponent->ExecuteSkillID(m_ParryAttackSkillID);
 	}
-}
-
-
-void APlayerCharacter::UpdateMovementSmoothing(float DeltaTime)
-{
-	UpdateInputSmoothing(DeltaTime);
-
-	FVector MoveDirection = FVector::ZeroVector;
-
-	if (!m_vSmoothedInput.IsNearlyZero())
-	{
-		if (Controller != nullptr)
-		{
-			const FRotator ControlRotation = Controller->GetControlRotation();
-			const FRotator YawRotation(0.f, ControlRotation.Yaw, 0.f);
-
-			const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-			const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-			MoveDirection = (ForwardDirection * m_vSmoothedInput.Y) + (RightDirection * m_vSmoothedInput.X);
-			MoveDirection.Z = 0.f;
-
-			if (!MoveDirection.IsNearlyZero())
-			{
-				MoveDirection.Normalize();
-			}
-		}
-	}
-
-	UpdateDirectionChange(DeltaTime, MoveDirection);
-
-	// 실제 입력이 있을 때만 회전 보간 적용
-	if (!m_vRawInput.IsNearlyZero() && !MoveDirection.IsNearlyZero())
-	{
-		const FQuat CurrentQuat = GetActorQuat();
-
-		const FRotator TargetRotator = MoveDirection.Rotation();
-		const FQuat TargetQuat = FQuat(FRotator(0.f, TargetRotator.Yaw, 0.f));
-
-		const FQuat NewQuat = FMath::QInterpTo(CurrentQuat, TargetQuat, DeltaTime, m_fInterpRotationSpeed);
-
-		SetActorRotation(NewQuat);
-	}
-
-	ApplyMovementSmoothing(MoveDirection);
-}
-
-void APlayerCharacter::UpdateInputSmoothing(float DeltaTime)
-{
-	m_vSmoothedInput.X = FMath::FInterpTo(m_vSmoothedInput.X, m_vRawInput.X, DeltaTime, m_fInterpInputSpeed);
-	m_vSmoothedInput.Y = FMath::FInterpTo(m_vSmoothedInput.Y, m_vRawInput.Y, DeltaTime, m_fInterpInputSpeed);
-}
-
-void APlayerCharacter::UpdateDirectionChange(float DeltaTime, const FVector& CurrentDirection)
-{
-	if (CurrentDirection.IsNearlyZero())
-	{
-		// 입력이 없을 시 속도 배율 회복
-		m_fCurrentSpeedMultiply = FMath::FInterpTo(m_fCurrentSpeedMultiply, 1.0f, DeltaTime, m_fBackSpeed);
-		return;
-	}
-
-	if (m_vLastDirection.IsNearlyZero())
-	{
-		// 첫 이동
-		m_vLastDirection = CurrentDirection;
-		m_fCurrentSpeedMultiply = 1.0f;
-		return;
-	}
-
-	// 이전 방향과 현재 방향 각도 계산
-	const float DirectionDot = FVector::DotProduct(m_vLastDirection, CurrentDirection);
-
-	// Dot = 1 , Dot = -1(반대)
-	float NormalizeDot = (DirectionDot + 1.0f) * 0.5f;		// 정규화 (0 ~ 1)
-
-	// 최저 속도와 최고 속도 보간
-	float Target = m_fMinSpeedDirectionChange + ((1.0f - m_fMinSpeedDirectionChange) * NormalizeDot);
-	Target = FMath::Clamp(Target, m_fMinSpeedDirectionChange, 1.0f);
-
-	// 급격한 방향 전환
-	if (Target < m_fMinSpeedDirectionChange)
-	{
-		// 즉시 감속
-		m_fCurrentSpeedMultiply = Target;
-	}
-	else
-	{
-		// 회복은 서서히
-		m_fCurrentSpeedMultiply = FMath::FInterpTo(m_fCurrentSpeedMultiply, Target, DeltaTime, m_fBackSpeed);
-	}
-
-	m_vLastDirection = CurrentDirection;
-}
-
-void APlayerCharacter::UpdateRotationSmoothing(float DeltaTime, const FVector& MoveDirection)
-{
-	if (MoveDirection.IsNearlyZero()) return;
-
-	const FRotator TargetRotation = MoveDirection.Rotation();
-	const FRotator CurrentRotation = GetActorRotation();
-
-	const FRotator NewRotation = FMath::RInterpTo(CurrentRotation, TargetRotation, DeltaTime, m_fInterpRotationSpeed);
-
-	SetActorRotation(FRotator(0.f, NewRotation.Yaw, 0.f));
-}
-
-void APlayerCharacter::ApplyMovementSmoothing(const FVector& MoveDirection)
-{
-	if (MoveDirection.IsNearlyZero()) return;
-
-	// 아날로그 스틱 지원
-	const float Input = FMath::Clamp(m_vSmoothedInput.Size(), 0.f, 1.f);
-
-	const float Scale = Input * m_fCurrentSpeedMultiply;
-
-	AddMovementInput(MoveDirection, Scale);
 }

@@ -109,6 +109,12 @@ void AZGPPlayerController::BeginPlay()
 		m_pChainAttackComponent->OnChainAttackFinished.AddDynamic(this, &AZGPPlayerController::HandleChainAttackFinish);
 		m_pChainAttackComponent->OnChainAttackCancelled.AddDynamic(this, &AZGPPlayerController::HandleChainAttackCancel);
 	}
+
+	// 타겟 변경 시 Character에 전달
+	if (m_pTargetingComponent)
+	{
+		m_pTargetingComponent->OnTargetChanged.AddDynamic(this, &AZGPPlayerController::HandleTargetChange);
+	}
 }
 
 void AZGPPlayerController::Tick(float DeltaTime)
@@ -423,6 +429,38 @@ void AZGPPlayerController::HandleLockOn()
 	if (m_pTargetingComponent)
 	{
 		m_pTargetingComponent->ToggleLockOn();
+
+		APlayerCharacter* PlayerCharacter = GetPawn<APlayerCharacter>();
+		if (PlayerCharacter)
+		{
+			if (m_pTargetingComponent->IsHardLock())
+			{
+				AActor* Target = m_pTargetingComponent->GetCurrentTarget();
+				PlayerCharacter->SetHardLockTarget(Target);
+			}
+			else
+			{
+				PlayerCharacter->ClearHardLockTarget();
+			}
+		}
+	}
+}
+
+void AZGPPlayerController::HandleTargetChange(AActor* NewTarget)
+{
+	APlayerCharacter* PlayerCharacter = GetPawn<APlayerCharacter>();
+	if (!PlayerCharacter) return;
+
+	if (m_pTargetingComponent && m_pTargetingComponent->IsHardLock())
+	{
+		if (NewTarget)
+		{
+			PlayerCharacter->SetHardLockTarget(NewTarget);
+		}
+		else
+		{
+			PlayerCharacter->ClearHardLockTarget();
+		}
 	}
 }
 

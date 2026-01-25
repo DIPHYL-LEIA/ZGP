@@ -24,8 +24,8 @@ public:
 	void Move(const struct FInputActionValue& Value);
 	void StopMove();
 	void Look(const FInputActionValue& Value);
-
 	void RequestAttack();
+	void RequestDodge();
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -49,14 +49,17 @@ public:
 	virtual void NotifySkillCompleted_Implementation() override;
 	virtual FName GetCurrentSkillID_Implementation() const override;
 
-	// Dodge
+	// Combat
 	virtual void ApplyCombatEffect_Implementation(const FDamageData& DamageData) override;
-	void RequestDodge();
 
 	UFUNCTION(BlueprintCallable, Category = "Parry")
 	void RequestParryAttack(AActor* ParriedEnemy);
 
 	class USkillComponent* GetSkillComponent() const { return m_pSkillComponent; }
+
+	// Hard Lock Setting (Controller에서 호출)
+	void SetHardLockTarget(AActor* Target);
+	void ClearHardLockTarget();
 
 	UPROPERTY(BlueprintAssignable, Category = "Chain Attack")
 	FOnChainAttackSkillFinish OnChainAttackSkillFinish;
@@ -76,11 +79,18 @@ protected:
 	TObjectPtr<class USkillComponent> m_pSkillComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UComboComponent> m_pComboComp;
+	TObjectPtr<class UComboComponent> m_pComboComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UDodgeComponent> m_pDodgeComp;
+	TObjectPtr<class UDodgeComponent> m_pDodgeCompComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<class UPlayerLocoComponent> m_pPlayerLocoComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<class UPlayerCameraComponent> m_pPlayerCameraComponent;
+
+	// Skill ID
 	UPROPERTY(EditDefaultsOnly)
 	FName m_ChainAttackSkillID = FName("ChainAttack");
 
@@ -89,19 +99,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	float m_fForceTagOutDelay = 3.0f;
-
-	// 이동 보간
-	UPROPERTY(EditDefaultsOnly, Category = "MovementSmoothing")
-	float m_fInterpInputSpeed = 8.0;
-
-	UPROPERTY(EditDefaultsOnly, Category = "MovementSmoothing")
-	float m_fInterpRotationSpeed = 10.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "MovementSmoothing")
-	float m_fMinSpeedDirectionChange = 0.3f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "MovementSmoothing")
-	float m_fBackSpeed = 5.0f;
 
 	// Chain Attack State
 	bool m_bIsChainAttack = false;
@@ -113,38 +110,13 @@ private:
 	bool m_bPendingTagOut = false;
 	FTimerHandle ForceTagOutTimerHandle;
 
-	// 이동 보간 시스템
-	// 입력
-	FVector2D m_vRawInput = FVector2D::ZeroVector;
-	FVector2D m_vSmoothedInput = FVector2D::ZeroVector;
-
-	// 회전
-	FVector m_vLastDirection = FVector::ZeroVector;
-
-	float m_fCurrentSpeedMultiply = 1.0f;
-
 	UFUNCTION()
 	void HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	void PerformTagIn(const FVector& TargetLocation, const FRotator& TargetRotation);
-
 	void ExecuteActionTagOut();
 	void SetActionTagOutState(bool bActive);
 
-	// Camera Lag
-	bool m_bCameraLag = false;
-	bool m_bCameraCollision = true;
-	bool m_bCameraResetPending = false;
-	FTimerHandle m_CameraLagTimerHandle;
-
-	UFUNCTION()
-	void ResetCameraSetting();
-
-	// 이동 보간 함수
-	void UpdateMovementSmoothing(float DeltaTime);
-	void UpdateInputSmoothing(float DeltaTime);
-	void UpdateDirectionChange(float DeltaTime, const FVector& CurrentDirection);
-	void UpdateRotationSmoothing(float DeltaTime, const FVector& MoveDirection);
-	void ApplyMovementSmoothing(const FVector& MoveDirection);
-
+	AActor* GetCurrentTarget() const;
+	bool IsHardLock() const;
 };
