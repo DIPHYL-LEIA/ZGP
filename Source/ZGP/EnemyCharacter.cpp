@@ -272,5 +272,11 @@ void AEnemyCharacter::HandleDied(AActor* Character)
 {
 	SetActionState(EActionState::DEAD);
 
+	if (m_pEnemyUIComponent)
+	{
+		m_pEnemyUIComponent->OnDied(Character);
+	}
+
 	// »ç¸Á Ã³¸®
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }

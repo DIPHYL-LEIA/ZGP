@@ -326,8 +326,29 @@ void USquadManagerComponent::CalculateChainAttackSpawnTransform(AActor* TargetEn
 
 bool USquadManagerComponent::ValidTagSpawnLocation(const FVector& Location, FVector& ValidLocation) const
 {
-	// 충돌 검사 필요
-	ValidLocation = Location;
-	return true;
+	UWorld* World = GetWorld();
+	if (!World) return false;
+
+	// 벽/장애물 충돌 검사
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(GetOwner());
+
+	FCollisionShape CapsuleShape = FCollisionShape::MakeCapsule(34.f, 88.f);
+
+	if (World->OverlapBlockingTestByChannel(Location, FQuat::Identity, ECC_Pawn, CapsuleShape))
+	{
+		return false;
+	}
+
+	FHitResult FloorHit;
+	FVector TraceStart = Location;
+	FVector TraceEnd = Location - FVector(0.f, 0.f, 500.f);
+
+	if (World->LineTraceSingleByChannel(FloorHit, TraceStart, TraceEnd, ECC_Visibility, QueryParams))
+	{
+		ValidLocation = Location;
+		return true;
+	}
+	return false;
 }
 

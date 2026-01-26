@@ -163,6 +163,17 @@ void AZGPPlayerController::OnPossess(APawn* InPawn)
 		PlayerCharacter->OnChainAttackSkillFinish.AddDynamic(this, &AZGPPlayerController::HandleChainAttackSkillFinish);
 		PlayerCharacter->OnPlayerPerfectDodge.AddDynamic(this, &AZGPPlayerController::HandlePerfectDodge);
 		PlayerCharacter->OnPlayerAttackStart.AddDynamic(this, &AZGPPlayerController::HandleAttackStart);
+
+		// Hard Lock 상태 다음 캐릭터에게 전달
+		if (m_pTargetingComponent && m_pTargetingComponent->IsHardLock())
+		{
+			AActor* CurrentTarget = m_pTargetingComponent->GetCurrentTarget();
+			PlayerCharacter->SetHardLockTarget(CurrentTarget);
+		}
+		else
+		{
+			PlayerCharacter->ClearHardLockTarget();
+		}
 	}
 
 	if (m_pCameraEffectComponent && m_pCameraEffectComponent->IsSlowMotionActive())
@@ -419,19 +430,24 @@ void AZGPPlayerController::HandleParryTag(APawn* NewActiveCharacter, AActor* Par
 
 void AZGPPlayerController::HandleChainAttackExecute()
 {
+	if (m_pCurrentChainTarget.IsValid())
+	{
+		PauseDazeTimer(m_pCurrentChainTarget.Get(), false);
+		m_pCurrentChainTarget.Reset();
+	}
 }
 
 void AZGPPlayerController::HandleChainAttackCancel()
-{
-}
-
-void AZGPPlayerController::HandleChainAttackFinish()
 {
 	if (m_pCurrentChainTarget.IsValid())
 	{
 		PauseDazeTimer(m_pCurrentChainTarget.Get(), false);
 		m_pCurrentChainTarget.Reset();
 	}
+}
+
+void AZGPPlayerController::HandleChainAttackFinish()
+{
 }
 
 void AZGPPlayerController::HandleAttack()
