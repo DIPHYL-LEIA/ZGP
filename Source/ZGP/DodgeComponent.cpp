@@ -59,7 +59,7 @@ bool UDodgeComponent::TryPerfectDodgeTrigger()
 
 	UE_LOG(LogTemp, Warning, TEXT("[Dodge] Perfect Dodge TRIGGERED!"));
 
-	ActivateDodgeEffect();
+	//ActivateDodgeEffect();
 	OnPerfectDodge.Broadcast();
 
 	return true;
@@ -79,22 +79,6 @@ void UDodgeComponent::ExecuteDodge(const FVector& Direction)
 	OnDodgeStart.Broadcast();
 
 	EDodgeDirection DodgeDirection = CalculateDodgeDirection(Direction);
-
-	//FVector DodgeDirection = Direction;
-	//if (DodgeDirection.IsNearlyZero())
-	//{
-	//	// 회피 방향으로의 입력이 없으면 후방으로 이동
-	//	DodgeDirection = -Owner->GetActorForwardVector();
-	//}
-
-	//DodgeDirection.Z = 0.f;
-	//DodgeDirection.Normalize();
-
-	//FRotator TargetRotation = DodgeDirection.Rotation();
-	//Owner->SetActorRotation(TargetRotation);
-
-	//// 이동 움직임 적용
-	//ApplyDodge(DodgeDirection);
 
 	if (m_pDodgeMontage)
 	{

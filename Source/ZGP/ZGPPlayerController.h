@@ -52,6 +52,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<class UChainAttackComponent> m_pChainAttackComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<class UCameraEffectComponent> m_pCameraEffectComponent;
 	
 
 	// Input
@@ -90,6 +93,18 @@ protected:
 	void HandleJump();
 	void HandleStopJumping();
 	void HandleDodge();
+
+	UFUNCTION()
+	void HandleAttackStart();
+
+	UFUNCTION()
+	void HandlePerfectDodge();
+
+	UFUNCTION()
+	void HandleParrySuccess(AActor* ParriedEnemy);
+
+	UFUNCTION()
+	void HandleChainAttackStart(APawn* NewActiveCharacter, AActor* TargetEnemy);
 
 	UFUNCTION()
 	void HandleParryTag(APawn* NewActiveCharacter, AActor* ParriedEnemy);

@@ -77,6 +77,11 @@ void APlayerCharacter::BeginPlay()
 	{
 		m_pPlayerCameraComponent->SetSpringArm(m_SpringArm);
 	}
+
+	if (m_pDodgeCompComponent)
+	{
+		m_pDodgeCompComponent->OnPerfectDodge.AddDynamic(this, &APlayerCharacter::HandlePerfectDodge);
+	}
 }
 
 void APlayerCharacter::Tick(float DeltaTime)
@@ -116,6 +121,8 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 
 void APlayerCharacter::RequestAttack()
 {
+	OnPlayerAttackStart.Broadcast();
+
 	// °ø°Ý Àü Å¸°Ù ¹æÇâ ÈíÂø ÁØºñ
 	AActor* Target = GetCurrentTarget();
 	if (m_pPlayerLocoComponent && Target)
@@ -291,6 +298,11 @@ void APlayerCharacter::HandleSkillMontageEnded()
 		m_bIsChainAttack = false;
 		OnChainAttackSkillFinish.Broadcast();
 	}
+}
+
+void APlayerCharacter::HandlePerfectDodge()
+{
+	OnPlayerPerfectDodge.Broadcast();
 }
 
 void APlayerCharacter::HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted)

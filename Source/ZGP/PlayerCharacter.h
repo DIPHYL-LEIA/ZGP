@@ -10,6 +10,8 @@
 #include "PlayerCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChainAttackSkillFinish);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerPerfectDodge);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerAttackStart);
 
 UCLASS()
 class ZGP_API APlayerCharacter : public ABaseCharacter, public ITaggable, public ITargetable, public ISkillExecutor
@@ -61,8 +63,14 @@ public:
 	void SetHardLockTarget(AActor* Target);
 	void ClearHardLockTarget();
 
-	UPROPERTY(BlueprintAssignable, Category = "Chain Attack")
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
 	FOnChainAttackSkillFinish OnChainAttackSkillFinish;
+
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FOnPlayerPerfectDodge OnPlayerPerfectDodge;
+
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FOnPlayerAttackStart  OnPlayerAttackStart;
 
 protected:
 	virtual void BeginPlay() override;
@@ -109,6 +117,9 @@ private:
 	// 태그 시 남은 행동 처리
 	bool m_bPendingTagOut = false;
 	FTimerHandle ForceTagOutTimerHandle;
+
+	UFUNCTION()
+	void HandlePerfectDodge();
 
 	UFUNCTION()
 	void HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted);

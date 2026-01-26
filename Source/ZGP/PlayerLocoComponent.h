@@ -73,7 +73,7 @@ private:
 
 	// Attack Homing 파라미터
 	UPROPERTY(EditDefaultsOnly)
-	float m_fHomingDistance = 300.f;
+	float m_fHomingDistance = 500.f;
 
 	UPROPERTY(EditDefaultsOnly)
 	float m_fHomingSpeed = 800.f;

@@ -57,10 +57,10 @@ private:
 	float m_fPitchClampMax = 30.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
-	float m_fMinDistanceForPitch = 300.f;  // 이 거리 이하에서 Pitch 변화 억제
+	float m_fMinDistanceForPitch = 600.f;  // 이 거리 이하에서 Pitch 변화 억제
 
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
-	float m_fDefaultPitch = -10.f;  // 기본 Pitch (약간 아래를 봄)
+	float m_fDefaultPitch = -30.f;  // 기본 Pitch (약간 아래를 봄)
 
 	// 함수
 	void UpdateHardLockCamera(float DeltaTime);

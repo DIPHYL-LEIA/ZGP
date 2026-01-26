@@ -14,6 +14,7 @@
 #include "SquadManagerComponent.h"
 #include "TargetingComponent.h"
 #include "ChainAttackComponent.h"
+#include "CameraEffectComponent.h"
 #include "Taggable.h"
 #include "Dazeable.h"
 
@@ -26,6 +27,7 @@ AZGPPlayerController::AZGPPlayerController()
 	m_pTargetingComponent = CreateDefaultSubobject<UTargetingComponent>(TEXT("TargetingComponent"));
 	m_pParryDetectorComponent = CreateDefaultSubobject<UParryDetectorComponent>(TEXT("ParryDetectorComponent"));
 	m_pChainAttackComponent = CreateDefaultSubobject<UChainAttackComponent>(TEXT("ChainAttackComponent"));
+	m_pCameraEffectComponent = CreateDefaultSubobject<UCameraEffectComponent>(TEXT("CameraEffectComponent"));
 
 	// Input Context
 	static ConstructorHelpers::FObjectFinder<UInputAction> MoveActionAsset(TEXT("/Game/ZGProject/ZGPInput/ia-move.ia-move"));
@@ -115,6 +117,17 @@ void AZGPPlayerController::BeginPlay()
 	{
 		m_pTargetingComponent->OnTargetChanged.AddDynamic(this, &AZGPPlayerController::HandleTargetChange);
 	}
+
+	if (m_pParryDetectorComponent)
+	{
+		m_pParryDetectorComponent->OnParrySuccess.AddDynamic(this, &AZGPPlayerController::HandleParrySuccess);
+	}
+
+	// Chain Attack ¿¬µ¿
+	if (m_pSquadManagerComponent)
+	{
+		m_pSquadManagerComponent->OnChainAttackExecute.AddDynamic(this, &AZGPPlayerController::HandleChainAttackStart);
+	}
 }
 
 void AZGPPlayerController::Tick(float DeltaTime)
@@ -148,6 +161,13 @@ void AZGPPlayerController::OnPossess(APawn* InPawn)
 	if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(InPawn))
 	{
 		PlayerCharacter->OnChainAttackSkillFinish.AddDynamic(this, &AZGPPlayerController::HandleChainAttackSkillFinish);
+		PlayerCharacter->OnPlayerPerfectDodge.AddDynamic(this, &AZGPPlayerController::HandlePerfectDodge);
+		PlayerCharacter->OnPlayerAttackStart.AddDynamic(this, &AZGPPlayerController::HandleAttackStart);
+	}
+
+	if (m_pCameraEffectComponent && m_pCameraEffectComponent->IsSlowMotionActive())
+	{
+		m_pCameraEffectComponent->ExcludeCurrentPawn();
 	}
 }
 
@@ -158,6 +178,8 @@ void AZGPPlayerController::OnUnPossess()
 	if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(InPawn))
 	{
 		PlayerCharacter->OnChainAttackSkillFinish.RemoveDynamic(this, &AZGPPlayerController::HandleChainAttackSkillFinish);
+		PlayerCharacter->OnPlayerPerfectDodge.RemoveDynamic(this, &AZGPPlayerController::HandlePerfectDodge);
+		PlayerCharacter->OnPlayerAttackStart.RemoveDynamic(this, &AZGPPlayerController::HandleAttackStart);
 	}
 
 	Super::OnUnPossess();
@@ -342,6 +364,48 @@ void AZGPPlayerController::HandleDodge()
 	if (APlayerCharacter* ControlledCharacter = GetPawn<APlayerCharacter>())
 	{
 		ControlledCharacter->RequestDodge();
+	}
+}
+
+void AZGPPlayerController::HandleAttackStart()
+{
+	if (m_pCameraEffectComponent && m_pCameraEffectComponent->IsPlayEffect())
+	{
+		ECameraEffectType CurrentType = m_pCameraEffectComponent->GetCurrentEffectType();
+		if (CurrentType == ECameraEffectType::PERPECT_DODGE)
+		{
+			m_pCameraEffectComponent->StopEffect();
+		}
+	}
+}
+
+void AZGPPlayerController::HandlePerfectDodge()
+{
+	if (m_pCameraEffectComponent)
+	{
+		AActor* Target = nullptr;
+		if (m_pTargetingComponent)
+		{
+			Target = m_pTargetingComponent->GetCurrentTarget();
+		}
+		m_pCameraEffectComponent->PlayEffect(ECameraEffectType::PERPECT_DODGE, Target);
+	}
+}
+
+void AZGPPlayerController::HandleParrySuccess(AActor* ParriedEnemy)
+{
+	if (m_pCameraEffectComponent)
+	{
+		//m_pCameraEffectComponent->PlayEffect(ECameraEffectType::PARRY_ASSIST, ParriedEnemy);
+		m_pCameraEffectComponent->StartParrySequence(ParriedEnemy);
+	}
+}
+
+void AZGPPlayerController::HandleChainAttackStart(APawn* NewActiveCharacter, AActor* TargetEnemy)
+{
+	if (m_pCameraEffectComponent)
+	{
+		m_pCameraEffectComponent->PlayEffect(ECameraEffectType::CHAIN_ATTACK, TargetEnemy);
 	}
 }
 
