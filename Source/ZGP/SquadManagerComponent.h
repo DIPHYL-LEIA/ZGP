@@ -87,7 +87,7 @@ private:
 	bool ValidTagSpawnLocation(const FVector& Location, FVector& ValidLocation) const;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Tag")
-	float m_fTagSpawnDistance = 1.f;
+	float m_fTagSpawnDistance = 1.2f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Tag")
 	float m_fTagSpawnSideOffset = 1.f;
