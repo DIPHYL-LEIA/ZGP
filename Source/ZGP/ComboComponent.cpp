@@ -76,11 +76,6 @@ void UComboComponent::RequestComboAttack()
 			m_bPendingInput = true;
 			m_ePendingInputType = EInputAttackType::TAP;
 		}
-		else
-		{
-			ResetCombo();
-			ExecuteCombo(EInputAttackType::TAP);
-		}
 	}
 	else
 	{

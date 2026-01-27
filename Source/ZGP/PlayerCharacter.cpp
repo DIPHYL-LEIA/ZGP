@@ -345,6 +345,11 @@ void APlayerCharacter::OnTagOut_Implementation()
 {
 	UE_LOG(LogTemp, Log, TEXT("%s : Execute Tag Out "), *GetName());
 
+	if (m_pPlayerLocoComponent)
+	{
+		m_pPlayerLocoComponent->ClearInput();
+	}
+
 	SetActorHiddenInGame(true);
 	SetActorEnableCollision(false);
 	SetActionState(EActionState::IDLE);
@@ -352,6 +357,10 @@ void APlayerCharacter::OnTagOut_Implementation()
 
 void APlayerCharacter::OnTagOutAction_Implementation()
 {
+	if (m_pPlayerLocoComponent)
+	{
+		m_pPlayerLocoComponent->ClearInput();
+	}
 	// 태그아웃 대기 상태 (무적, 충돌 무시)
 	SetActionTagOutState(true);
 
