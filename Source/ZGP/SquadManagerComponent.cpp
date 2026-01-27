@@ -276,8 +276,8 @@ void USquadManagerComponent::CalculateTagSpawnTransform(const APawn* BaseCharact
 	const FRotator BaseRotation = BaseCharacter->GetActorRotation();
 
 	// 로컬 좌표 -> 월드 좌표계 변환
-	const FVector RightVector = FRotationMatrix(BaseRotation).GetScaledAxis(EAxis::Y);
-	const FVector ForwardVector = FRotationMatrix(BaseRotation).GetScaledAxis(EAxis::X);
+	const FVector RightVector = BaseCharacter->GetActorRightVector();
+	const FVector ForwardVector = BaseCharacter->GetActorForwardVector();
 
 	// 오프셋
 	FVector Offset = (RightVector * m_fTagSpawnSideOffset) + (ForwardVector * (-m_fTagSpawnDistance));
