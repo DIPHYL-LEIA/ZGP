@@ -26,9 +26,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UActionStateComponent> m_pActionStateComponent;
 
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	//TObjectPtr<class USkillComponent> m_pSkillComponent;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UHealthComponent> m_pHealthComponent;
 
@@ -44,11 +41,14 @@ protected:
 	UFUNCTION()
 	void HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
+	// Hit Reaction
 	UFUNCTION()
-	void HandleHitReactionStart(EHitReactionType ReactionType, bool bCancel);
+	virtual void HandleHitReactionStart(EHitReactionType ReactionType, bool bCancel);
 
 	UFUNCTION()
-	void HandleHitReactionEnd();
+	virtual void HandleHitReactionEnd();
+
+	void SetHitStateCancel(bool bCancel);
 
 public:
 	virtual void Tick(float DeltaTime) override;

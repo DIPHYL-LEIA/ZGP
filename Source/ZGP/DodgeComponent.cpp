@@ -169,11 +169,12 @@ void UDodgeComponent::ActivateDodgeEffect()
 	UWorld* World = GetWorld();
 	if (!World) return;
 
-	UGameplayStatics::SetGlobalTimeDilation(World, m_fPerfectDodgeSlowRate);
+	//UGameplayStatics::SetGlobalTimeDilation(World, m_fPerfectDodgeSlowRate);
 
-	World->GetTimerManager().SetTimer(PerfectDodgeTimerHandle, this, &UDodgeComponent::DeActivateDodgeEffect,
-		m_fPerfectDodgeSlowDuration * m_fPerfectDodgeSlowRate, // 실제 시간 기준
-		false);
+	//World->GetTimerManager().SetTimer(PerfectDodgeTimerHandle, this, &UDodgeComponent::DeActivateDodgeEffect,
+	//	m_fPerfectDodgeSlowDuration * m_fPerfectDodgeSlowRate, // 실제 시간 기준
+	//	false);
+	OnPerfectDodge.Broadcast();
 
 	AActor* Owner = Cast<ACharacter>(GetOwner());
 	if (Owner)

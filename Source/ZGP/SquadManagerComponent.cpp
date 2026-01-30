@@ -77,6 +77,9 @@ void USquadManagerComponent::InitializeSquad()
 			}
 			NewCharacter->SetActorHiddenInGame(true);
 			NewCharacter->SetActorEnableCollision(false);
+
+			// 비활성화 상태의 Tick을 꺼줌
+			NewCharacter->SetActorTickEnabled(false);
 		}
 	}
 
@@ -195,6 +198,13 @@ void USquadManagerComponent::DoTag(APawn* InCharacter, APawn* OutCharacter)
 	FRotator TargetRotation;
 
 	CalculateTagSpawnTransform(OutCharacter, TargetLocation, TargetRotation);
+
+	// 나가는 캐릭터와 들어가는 캐릭터의 Tick 처리
+	OutCharacter->SetActorTickEnabled(false);
+	ITaggable::Execute_OnTagOut(OutCharacter);
+
+	InCharacter->SetActorTickEnabled(true);
+	ITaggable::Execute_OnTagIn(InCharacter, TargetLocation, TargetRotation);
 
 	ITaggable::Execute_OnTagOut(OutCharacter);
 	ITaggable::Execute_OnTagIn(InCharacter, TargetLocation, TargetRotation);

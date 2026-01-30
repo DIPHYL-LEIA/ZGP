@@ -90,6 +90,14 @@ void ABaseCharacter::HandleHitReactionEnd()
 	}
 }
 
+void ABaseCharacter::SetHitStateCancel(bool bCancel)
+{
+	if (m_pActionStateComponent)
+	{
+		m_pActionStateComponent->SetHitStateCancel(bCancel);
+	}
+}
+
 // Called every frame
 void ABaseCharacter::Tick(float DeltaTime)
 {

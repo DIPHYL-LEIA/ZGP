@@ -86,6 +86,13 @@ void APlayerCharacter::BeginPlay()
 
 void APlayerCharacter::Tick(float DeltaTime)
 {
+	// 비활성화 캐릭터의 에너지 회복 처리를 위해
+	//if (IsHidden())
+	//{
+	//	RegenOffFieldEnergy(DeltaTime);
+	//	return;
+	//}
+
 	Super::Tick(DeltaTime);
 }
 
@@ -249,6 +256,11 @@ void APlayerCharacter::ExecuteActionTagOut()
 
 	m_bPendingTagOut = false;
 
+	if (m_SpringArm)
+	{
+		m_SpringArm->bEnableCameraLag = false;
+	}
+
 	// 상태 복원 후 숨김
 	SetActionTagOutState(false);
 	SetActorHiddenInGame(true);
@@ -300,6 +312,21 @@ void APlayerCharacter::HandleSkillMontageEnded()
 	}
 }
 
+void APlayerCharacter::HandleHitReactionStart(EHitReactionType ReactionType, bool bCancel)
+{
+	Super::HandleHitReactionStart(ReactionType, bCancel);
+
+	m_eCurrentHitReactionType = ReactionType;
+	OnPlayerHitReactionStart.Broadcast(ReactionType);
+}
+
+void APlayerCharacter::HandleHitReactionEnd()
+{
+	Super::HandleHitReactionEnd();
+	m_eCurrentHitReactionType = EHitReactionType::NONE;
+	OnPlayerHitReactionEnd.Broadcast();
+}
+
 void APlayerCharacter::HandlePerfectDodge()
 {
 	OnPlayerPerfectDodge.Broadcast();
@@ -348,6 +375,11 @@ void APlayerCharacter::OnTagOut_Implementation()
 	if (m_pPlayerLocoComponent)
 	{
 		m_pPlayerLocoComponent->ClearInput();
+	}
+
+	if (m_SpringArm)
+	{
+		m_SpringArm->bEnableCameraLag = false;
 	}
 
 	SetActorHiddenInGame(true);
@@ -472,8 +504,12 @@ FName APlayerCharacter::GetCurrentSkillID_Implementation() const
 
 void APlayerCharacter::ApplyCombatEffect_Implementation(const FDamageData& DamageData)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[PlayerCharacter] ApplyCombatEffect called"));
+	UE_LOG(LogTemp, Warning, TEXT("[PlayerCharacter] HitReaction Type: %d"), static_cast<int32>(DamageData.HitReaction));
+
 	if (m_pDodgeCompComponent && m_pDodgeCompComponent->IsInvincible())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("[PlayerCharacter] Player is Invincible - checking Perfect Dodge"));
 		bool bSuccess = m_pDodgeCompComponent->TryPerfectDodgeTrigger();
 		if (bSuccess)
 		{
@@ -482,9 +518,13 @@ void APlayerCharacter::ApplyCombatEffect_Implementation(const FDamageData& Damag
 		return;
 	}
 
-	// HitReaction이 Light일 때 Hit 상태 진입하지 않음
-	if (DamageData.HitReaction == EHitReactionType::LIGHT) return;
+	if (DamageData.HitReaction == EHitReactionType::LIGHT)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[PlayerCharacter] HitReaction is LIGHT - skipping Hit state"));
+		return;
+	}
 
+	UE_LOG(LogTemp, Warning, TEXT("[PlayerCharacter] Calling Super::ApplyCombatEffect"));
 	Super::ApplyCombatEffect_Implementation(DamageData);
 }
 
@@ -514,5 +554,55 @@ void APlayerCharacter::RequestParryAttack(AActor* ParriedEnemy)
 	if (m_pSkillComponent)
 	{
 		m_pSkillComponent->ExecuteSkillID(m_ParryAttackSkillID);
+	}
+}
+
+void APlayerCharacter::ExecuteReactiveAssistSkill(AActor* TargetEnemy)
+{
+	if (!m_pSkillComponent) return;
+
+	// 적 방향으로 회전
+	if (TargetEnemy)
+	{
+		FVector Direction = TargetEnemy->GetActorLocation() - GetActorLocation();
+		Direction.Z = 0.f;
+		if (!Direction.IsNearlyZero())
+		{
+			SetActorRotation(Direction.Rotation());
+		}
+	}
+
+	SetHitStateCancel(true);
+	SetActionState(EActionState::ATTACKING);
+
+	if (!m_ReactiveAssistSkillID.IsNone())
+	{
+		m_pSkillComponent->ExecuteSkillID(m_ReactiveAssistSkillID);
+	}
+}
+
+void APlayerCharacter::ExecuteQuickAssistSkill(AActor* TargetEnemy)
+{
+	/* 중복 코드 문제 해결 필요*/
+
+	if (!m_pSkillComponent) return;
+
+	// 적 방향으로 회전
+	if (TargetEnemy)
+	{
+		FVector Direction = TargetEnemy->GetActorLocation() - GetActorLocation();
+		Direction.Z = 0.f;
+		if (!Direction.IsNearlyZero())
+		{
+			SetActorRotation(Direction.Rotation());
+		}
+	}
+
+	SetHitStateCancel(true);
+	SetActionState(EActionState::ATTACKING);
+
+	if (!m_QuickAssistSkillID.IsNone())
+	{
+		m_pSkillComponent->ExecuteSkillID(m_QuickAssistSkillID);
 	}
 }

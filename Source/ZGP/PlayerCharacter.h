@@ -13,6 +13,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChainAttackSkillFinish);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerPerfectDodge);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerAttackStart);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerHitReactionStart, EHitReactionType, ReactionType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerHitReactionEnd);
+
 UCLASS()
 class ZGP_API APlayerCharacter : public ABaseCharacter, public ITaggable, public ITargetable, public ISkillExecutor
 {
@@ -54,14 +57,26 @@ public:
 	// Combat
 	virtual void ApplyCombatEffect_Implementation(const FDamageData& DamageData) override;
 
-	UFUNCTION(BlueprintCallable, Category = "Parry")
+	UFUNCTION(BlueprintCallable)
 	void RequestParryAttack(AActor* ParriedEnemy);
+
+	// Reactive Assist
+	UFUNCTION(BlueprintCallable, Category = "Assist")
+	void ExecuteReactiveAssistSkill(AActor* TargetEnemy);
+
+	UFUNCTION(BlueprintCallable, Category = "Assist")
+	void ExecuteQuickAssistSkill(AActor* TargetEnemy);
+
+	// 현재 HitReaction Type 조회
+	EHitReactionType GetCurrentHitReactionType() const { return m_eCurrentHitReactionType; }
 
 	class USkillComponent* GetSkillComponent() const { return m_pSkillComponent; }
 
 	// Hard Lock Setting (Controller에서 호출)
 	void SetHardLockTarget(AActor* Target);
 	void ClearHardLockTarget();
+
+
 
 	UPROPERTY(BlueprintAssignable, Category = "Combat")
 	FOnChainAttackSkillFinish OnChainAttackSkillFinish;
@@ -71,6 +86,12 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Combat")
 	FOnPlayerAttackStart  OnPlayerAttackStart;
+
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FOnPlayerHitReactionStart OnPlayerHitReactionStart;
+	
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FOnPlayerHitReactionEnd OnPlayerHitReactionEnd;
 
 protected:
 	virtual void BeginPlay() override;
@@ -106,12 +127,24 @@ protected:
 	FName m_ParryAttackSkillID = FName("ParryAttack");
 
 	UPROPERTY(EditDefaultsOnly)
-	float m_fForceTagOutDelay = 3.0f;
+	FName m_ReactiveAssistSkillID;
+
+	UPROPERTY(EditDefaultsOnly)
+	FName m_QuickAssistSkillID;
 
 	// Chain Attack State
 	bool m_bIsChainAttack = false;
 
+	UPROPERTY(EditDefaultsOnly)
+	float m_fForceTagOutDelay = 3.0f;
+
+	UPROPERTY(EditDefaultsOnly)
+	EHitReactionType m_eCurrentHitReactionType = EHitReactionType::NONE;
+
 	void HandleSkillMontageEnded();
+
+	virtual void HandleHitReactionStart(EHitReactionType ReactionType, bool bCancel) override;
+	virtual void HandleHitReactionEnd() override;
 
 private:
 	// 태그 시 남은 행동 처리
