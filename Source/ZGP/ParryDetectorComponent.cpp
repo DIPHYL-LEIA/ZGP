@@ -5,6 +5,8 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "CombatInteraction.h"
+#include "TargetProvider.h"
+#include "Engine/OverlapResult.h"
 
 UParryDetectorComponent::UParryDetectorComponent()
 {
@@ -16,63 +18,20 @@ void UParryDetectorComponent::BeginPlay()
 	Super::BeginPlay();
 }
 
-void UParryDetectorComponent::RegisterParryableAttack(AActor* Attacker)
-{
-	if (!Attacker) return;
-
-	CleanExpiredAttack();
-
-	UWorld* World = GetWorld();
-	if (!World) return;
-
-	float CurrentTime = World->GetTimeSeconds();
-
-	// 이미 등록된 공격자인지 확인
-	for (FParryableAttackInfo& Info : m_arParryableAttacks)
-	{
-		if (Info.attacker.Get() == Attacker)
-		{
-			Info.registerTime = CurrentTime;
-			return;
-		}
-	}
-
-	m_arParryableAttacks.Add(FParryableAttackInfo(Attacker, CurrentTime));
-
-}
-
-void UParryDetectorComponent::UnregisterParryableAttack(AActor* Attacker)
-{
-	if (!Attacker) return;
-
-	// ???
-	for (int32 i = m_arParryableAttacks.Num() - 1; i >= 0; --i)
-	{
-		if (m_arParryableAttacks[i].attacker.Get() == Attacker)
-		{
-			m_arParryableAttacks.RemoveAt(i);
-			return;
-		}
-	}
-}
-
 bool UParryDetectorComponent::CanParry() const
 {
-	if (m_arParryableAttacks.Num() == 0) return false;
-
-	UWorld* World = GetWorld();
-	if (!World) return false;
-
 	AActor* ActiveCharacter = GetActiveCharacter();
 	if (!ActiveCharacter) return false;
 
-	const float CurrentTime = World->GetTimeSeconds();
 	const FVector Location = ActiveCharacter->GetActorLocation();
 	const FVector Forward = ActiveCharacter->GetActorForwardVector();
 
-	for (const FParryableAttackInfo& Info : m_arParryableAttacks)
+	TArray<AActor*> NearActors;
+	FindParryableActors(NearActors);
+
+	for (AActor* Actor : NearActors)
 	{
-		if (IsValidParryTarget(Info, Location, Forward, CurrentTime))
+		if (IsValidParryTarget(Actor, Location, Forward))
 		{
 			return true;
 		}
@@ -83,34 +42,49 @@ bool UParryDetectorComponent::CanParry() const
 
 AActor* UParryDetectorComponent::GetParryTarget() const
 {
-	UWorld* World = GetWorld();
-	if (!World) return nullptr;
-
 	AActor* ActiveCharacter = GetActiveCharacter();
 	if (!ActiveCharacter) return nullptr;
 
-	const float CurrentTime = World->GetTimeSeconds();
 	const FVector Location = ActiveCharacter->GetActorLocation();
 	const FVector Forward = ActiveCharacter->GetActorForwardVector();
-	const float MaxDistanceSquared = m_fParryMaxDistane * m_fParryMaxDistane;
+	const float MaxDistanceSquared = m_fParryMaxDistance * m_fParryMaxDistance;
 
-	// 가까운 타겟
+	TArray<AActor*> NearActors;
+	FindParryableActors(NearActors);
+
+	if (NearActors.Num() == 0) return nullptr;
+
+	// 1 순위 : 현재 타겟이 패리 가능이면 즉시 반환
+	AActor* Owner = GetOwner();
+	if (Owner && Owner->Implements<UTargetProvider>())
+	{
+		AActor* CurrentTarget = ITargetProvider::Execute_GetCurrentTargetActor(Owner);
+		if (CurrentTarget && NearActors.Contains(CurrentTarget))
+		{
+			if (IsValidParryTarget(CurrentTarget, Location, Forward))
+			{
+				return CurrentTarget;
+			}
+		}
+	}
+
+	// 2 순위 : 가까운 타겟
 	AActor* CloseTarget = nullptr;
 	float CloseDistanceSquared = MaxDistanceSquared;
 
-	for (const FParryableAttackInfo& Info : m_arParryableAttacks)
+	for (AActor* Actor : NearActors)
 	{
-		if (!IsValidParryTarget(Info, Location, Forward, CurrentTime))
+		if (!IsValidParryTarget(Actor, Location, Forward))
 		{
 			continue;
 		}
 
-		float DistanceSquared = FVector::DistSquared(Location, Info.attacker->GetActorLocation());
+		float DistanceSquared = FVector::DistSquared(Location, Actor->GetActorLocation());
 
 		if (DistanceSquared < CloseDistanceSquared)
 		{
 			CloseDistanceSquared = DistanceSquared;
-			CloseTarget = Info.attacker.Get();
+			CloseTarget = Actor;
 		}
 	}
 	return CloseTarget;
@@ -118,19 +92,18 @@ AActor* UParryDetectorComponent::GetParryTarget() const
 
 bool UParryDetectorComponent::ExecuteParry()
 {
-	CleanExpiredAttack();
-
 	AActor* Target = GetParryTarget();
 	if (!Target) return false;
+
+	AActor* ActiveCharacter = GetActiveCharacter();
 
 	// 적에게 Parried 호출
 	if (Target->Implements<UCombatInteraction>())
 	{
-		AActor* ActiveCharacter = GetActiveCharacter();
 		ICombatInteraction::Execute_Parried(Target, ActiveCharacter);
+		// Parry 성공 시 즉시 비활성화
+		ICombatInteraction::Execute_SetParryWindowActive(Target, false);
 	}
-
-	UnregisterParryableAttack(Target);
 
 	OnParrySuccess.Broadcast(Target);
 	UE_LOG(LogTemp, Log, TEXT("[ParryDetector] Parry SUCCESS on: %s"), *Target->GetName());
@@ -138,44 +111,24 @@ bool UParryDetectorComponent::ExecuteParry()
 	return true;
 }
 
-void UParryDetectorComponent::CleanExpiredAttack()
+bool UParryDetectorComponent::IsValidParryTarget(AActor* Target, const FVector& CharacterLocation, const FVector& CharacterForward) const
 {
-	UWorld* World = GetWorld();
-	if (!World) return;
+	if (!Target) return false;
 
-	const float CurrentTime = World->GetTimeSeconds();
+	const FVector TargetLocation = Target->GetActorLocation();
 
-	for (int32 i = m_arParryableAttacks.Num() - 1; i >= 0; --i)
-	{
-		const FParryableAttackInfo& Info = m_arParryableAttacks[i];
-
-		if (!Info.attacker.IsValid() || CurrentTime - Info.registerTime > m_fParryWindowDuration)
-		{
-			m_arParryableAttacks.RemoveAt(i);
-		}
-	}
-}
-
-bool UParryDetectorComponent::IsValidParryTarget(const FParryableAttackInfo& Info, const FVector& CharacterLocation, const FVector& CharacterForward, float CurrentTime) const
-{
-	if (!Info.attacker.IsValid()) return false;
-
-	if (CurrentTime - Info.registerTime > m_fParryWindowDuration) return false;
-
-	const FVector AttackerLocation = Info.attacker->GetActorLocation();
-
-	const float MaxDistanceSquared = m_fParryMaxDistane * m_fParryMaxDistane;
-	const float DistanceSquared = FVector::DistSquared(CharacterLocation, AttackerLocation);
+	const float MaxDistanceSquared = m_fParryMaxDistance * m_fParryMaxDistance;
+	const float DistanceSquared = FVector::DistSquared(CharacterLocation, TargetLocation);
 	if (DistanceSquared > MaxDistanceSquared) return false;
 
 	// 전방 각도 내의 위치에 있는지 체크
-	FVector ToAttacker = AttackerLocation - CharacterLocation;
-	ToAttacker.Z = 0.f;
-	ToAttacker = ToAttacker.GetSafeNormal();
+	FVector ToTarget = TargetLocation - CharacterLocation;
+	ToTarget.Z = 0.f;
+	ToTarget = ToTarget.GetSafeNormal();
 
 	FVector ForwardXY = FVector(CharacterForward.X, CharacterForward.Y, 0.f).GetSafeNormal();
 
-	const float DotProduct = FVector::DotProduct(ForwardXY, ToAttacker);
+	const float DotProduct = FVector::DotProduct(ForwardXY, ToTarget);
 	if (DotProduct < m_fParryAngle) return false;
 
 	return true;
@@ -187,6 +140,38 @@ AActor* UParryDetectorComponent::GetActiveCharacter() const
 	if (!PC) return nullptr;
 
 	return PC->GetPawn();
+}
+
+void UParryDetectorComponent::FindParryableActors(TArray<AActor*>& OutActors) const
+{
+	AActor* ActiveCharacter = GetActiveCharacter();
+	if (!ActiveCharacter) return;
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	FVector Origin = ActiveCharacter->GetActorLocation();
+	FCollisionShape Sphere = FCollisionShape::MakeSphere(m_fParryMaxDistance);
+
+	TArray<FOverlapResult> Overlaps;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(ActiveCharacter);
+
+	World->OverlapMultiByChannel(Overlaps, Origin, FQuat::Identity, ECC_Pawn, Sphere, Params);
+
+	for (const FOverlapResult& Overlap : Overlaps)
+	{
+		AActor* Actor = Overlap.GetActor();
+		if (!Actor) continue;
+
+		if (Actor->Implements<UCombatInteraction>())
+		{
+			if (ICombatInteraction::Execute_CanParry(Actor))
+			{
+				OutActors.Add(Actor);
+			}
+		}
+	}
 }
 
 

@@ -91,7 +91,7 @@ UEnemyDazeComponent* AEnemyCharacter::GetDazeComponent() const
 
 UEnemyUIComponent* AEnemyCharacter::GetUIComponent() const
 {
-	return nullptr;
+	return m_pEnemyUIComponent;
 }
 
 bool AEnemyCharacter::IsTargetable_Implementation() const
@@ -101,6 +101,7 @@ bool AEnemyCharacter::IsTargetable_Implementation() const
 
 FVector AEnemyCharacter::GetTargetLocation_Implementation() const
 {
+	// Need to change Targeting point
 	return GetMesh()->GetSocketLocation(TEXT("Humanoid_-Spine2"));
 }
 
@@ -211,6 +212,16 @@ void AEnemyCharacter::ApplyCombatEffect_Implementation(const FDamageData& Damage
 	{
 		m_pEnemyDazeComponent->TakeDaze(DamageData.DazeValue);
 	}
+}
+
+void AEnemyCharacter::SetParryWindowActive_Implementation(bool bActive)
+{
+	m_bParryWindowActive = bActive;
+}
+
+bool AEnemyCharacter::CanParry_Implementation() const
+{
+	return m_bParryWindowActive && !IsActionState(EActionState::DEAD);
 }
 
 void AEnemyCharacter::BindUIComponent()

@@ -21,6 +21,9 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
 	void ApplyCombatEffect(const FDamageData& DamageData);
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
+	void SetParryWindowActive(bool bActive);
+
 	// Enemy가 눈 번쩍이는 타이밍에 사용
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
 	bool CanParry() const;

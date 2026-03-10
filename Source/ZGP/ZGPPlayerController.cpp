@@ -90,8 +90,6 @@ void AZGPPlayerController::BeginPlay()
 		}
 	}
 
-	if (m_pSquadManagerComponent == nullptr) return;
-
 	if (m_pSquadManagerComponent)
 	{
 		m_pSquadManagerComponent->OnParryTagExecute.AddDynamic(this, &AZGPPlayerController::HandleParryTag);

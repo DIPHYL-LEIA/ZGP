@@ -70,7 +70,7 @@ public:
 	float EnergyCost = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Resource")
-	float DecibelCost = 3000.0f;
+	float DecibelCost = 0.0f;
 
 	// Resource 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Resource")

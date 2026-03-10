@@ -62,6 +62,7 @@ public:
 
 	// CombatInteraction
 	virtual void ApplyCombatEffect_Implementation(const FDamageData& DamageData) override;
+	virtual void SetParryWindowActive_Implementation(bool bActive) override;
 	virtual bool CanParry_Implementation() const override;
 	virtual void Parried_Implementation(AActor* Character) override;
 

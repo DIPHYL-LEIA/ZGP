@@ -101,14 +101,15 @@ void UComboComponent::EndComboWindow()
 
 	if (m_bIsComboActive)
 	{
-		if (m_bIsLastCombo)
-		{
-			StartResetTimer();
-		}
-		else
-		{
-			StartResetTimer();
-		}
+		StartResetTimer();
+		//if (m_bIsLastCombo)
+		//{
+		//	StartResetTimer();
+		//}
+		//else
+		//{
+		//	StartResetTimer();
+		//}
 	}
 }
 

@@ -31,6 +31,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy")
 	EEnemyType m_eEnemyType = EEnemyType::NORMAL;
 
+	bool m_bParryWindowActive = false;
+
 public:
 	AEnemyCharacter();
 
@@ -60,6 +62,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void ApplyCombatEffect_Implementation(const FDamageData& DamageData) override;
+	virtual void SetParryWindowActive_Implementation(bool bActive) override;
+	virtual bool CanParry_Implementation() const override;
 
 	UFUNCTION()
 	void BindUIComponent();

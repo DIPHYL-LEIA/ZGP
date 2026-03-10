@@ -158,6 +158,10 @@ void ABaseCharacter::ApplyCombatEffect_Implementation(const FDamageData& DamageD
 	}
 }
 
+void ABaseCharacter::SetParryWindowActive_Implementation(bool bActive)
+{
+}
+
 bool ABaseCharacter::CanParry_Implementation() const
 {
 	return false;

@@ -8,23 +8,6 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnParrySuccess, AActor*, ParriedEnemy);
 
-USTRUCT()
-struct FParryableAttackInfo
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	TWeakObjectPtr<AActor> attacker;
-
-	UPROPERTY()
-	float registerTime = 0.f;
-
-	FParryableAttackInfo() {}
-	FParryableAttackInfo(AActor* InAttacker, float InTime) 
-		: attacker(InAttacker), registerTime(InTime)
-	{}
-};
-
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ZGP_API UParryDetectorComponent : public UActorComponent
 {
@@ -32,12 +15,6 @@ class ZGP_API UParryDetectorComponent : public UActorComponent
 
 public:	
 	UParryDetectorComponent();
-
-	UFUNCTION(BlueprintCallable, Category = "Parry")
-	void RegisterParryableAttack(AActor* Attacker);
-
-	UFUNCTION(BlueprintCallable, Category = "Parry")
-	void UnregisterParryableAttack(AActor* Attacker);
 
 	UFUNCTION(BlueprintPure, Category = "Parry")
 	bool CanParry() const;
@@ -55,21 +32,15 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Parry")
-	float m_fParryWindowDuration = 1.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Parry")
-	float m_fParryMaxDistane = 500.f;
+	float m_fParryMaxDistance = 500.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Parry")
 	float m_fParryAngle = 0.0f;
 
 private:
-	UPROPERTY()
-	TArray<FParryableAttackInfo> m_arParryableAttacks;
-
-	void CleanExpiredAttack();
-	bool IsValidParryTarget(const FParryableAttackInfo& Info, const FVector& CharacterLocation, const FVector& CharacterForward, float CurrentTime) const;
+	bool IsValidParryTarget(AActor* Target, const FVector& CharacterLocation, const FVector& CharacterForward) const;
 	AActor* GetActiveCharacter() const;
+	void FindParryableActors(TArray<AActor*>& OutActors) const;
 
 
 };

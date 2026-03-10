@@ -83,11 +83,11 @@ bool UActionStateComponent::CanChangeActionState(EActionState NewState) const
 	if (NewPriority > CurrentPriority) 
 		return true;
 
-	// 예외) 공격 중 회피 캔슬 허용
-	if (m_currentState == EActionState::ATTACKING && NewState == EActionState::DODGING)
-	{
-		return true;
-	}
+	//// 예외) 공격 중 회피 캔슬 허용
+	//if (m_currentState == EActionState::ATTACKING && NewState == EActionState::DODGING)
+	//{
+	//	return true;
+	//}
 
 	return false;
 }

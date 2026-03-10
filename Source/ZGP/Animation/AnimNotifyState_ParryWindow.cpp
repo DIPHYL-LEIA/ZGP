@@ -3,6 +3,7 @@
 
 #include "AnimNotifyState_ParryWindow.h"
 #include "../ParryDetectorComponent.h"
+#include "../CombatInteraction.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 
@@ -15,12 +16,10 @@ void UAnimNotifyState_ParryWindow::NotifyBegin(USkeletalMeshComponent* MeshComp,
 	AActor* Owner = MeshComp->GetOwner();
 	if (!Owner) return;
 
-	UParryDetectorComponent* ParryComponent = GetParryDetector(MeshComp);
-	if (ParryComponent)
+	if (Owner->Implements<UCombatInteraction>())
 	{
-		ParryComponent->RegisterParryableAttack(Owner);
+		ICombatInteraction::Execute_SetParryWindowActive(Owner, true);
 	}
-
 }
 
 void UAnimNotifyState_ParryWindow::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)
@@ -32,27 +31,13 @@ void UAnimNotifyState_ParryWindow::NotifyEnd(USkeletalMeshComponent* MeshComp, U
 	AActor* Owner = MeshComp->GetOwner();
 	if (!Owner) return;
 
-	UParryDetectorComponent* ParryComponent = GetParryDetector(MeshComp);
-	if (ParryComponent)
+	if (Owner->Implements<UCombatInteraction>())
 	{
-		ParryComponent->UnregisterParryableAttack(Owner);
+		ICombatInteraction::Execute_SetParryWindowActive(Owner, false);
 	}
 }
 
 FString UAnimNotifyState_ParryWindow::GetNotifyName_Implementation() const
 {
 	return TEXT("Parry Window");
-}
-
-UParryDetectorComponent* UAnimNotifyState_ParryWindow::GetParryDetector(USkeletalMeshComponent* MeshComp) const
-{
-	if (!MeshComp) return nullptr;
-
-	UWorld* World = MeshComp->GetWorld();
-	if (!World) return nullptr;
-
-	APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
-	if (!PC) return nullptr;
-
-	return PC->FindComponentByClass<UParryDetectorComponent>();
 }
