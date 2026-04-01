@@ -5,6 +5,7 @@
 #include "Engine/DataTable.h"
 #include "ComboData.h"
 #include "Animation/AnimMontage.h"
+#include "ResourceProvider.h"
 
 USkillComponent::USkillComponent()
 {
@@ -35,6 +36,16 @@ bool USkillComponent::CanExecuteSkill(FName SkillID) const
 {
 	const FSkillData* SkillData = FindSkillData(SkillID);
 	if (!SkillData) return false;
+
+	// Check Resource
+	AActor* Owner = GetOwner();
+	if (Owner && Owner->Implements<UResourceProvider>())
+	{
+		if (!IResourceProvider::Execute_HasResource(Owner, SkillData->EnergyCost, SkillData->DecibelCost))
+		{
+			return false;
+		}
+	}
 
 	return true;
 }
@@ -89,6 +100,20 @@ bool USkillComponent::ExecuteSkillInternal(FName SkillID, bool bOverrideHeavy, b
 
 	const FSkillData* SkillData = FindSkillData(SkillID);
 	if (!SkillData) return false;
+
+	// Check Resource
+	AActor* Owner = GetOwner();
+	if (Owner && Owner->Implements<UResourceProvider>())
+	{
+		if (!IResourceProvider::Execute_HasResource(Owner, SkillData->EnergyCost, SkillData->DecibelCost))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[SkillComponent] Not enough resource for: %s"), *SkillID.ToString());
+			return false;
+		}
+
+		// Consume
+		IResourceProvider::Execute_ConsumeResource(Owner, SkillData->EnergyCost, SkillData->DecibelCost);
+	}
 
 	UAnimMontage* Montage = SkillData->Montage.LoadSynchronous();
 	if (!Montage) return false;

@@ -24,6 +24,13 @@ struct FAttackData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
 	FVector Offset = FVector::ZeroVector;
+	
+	// Resource
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Resource")
+	float ResourceGain = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Resource")
+	float DecibelGain = 0.f;
 
 	// Damage
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")

@@ -7,6 +7,7 @@
 #include "Taggable.h"
 #include "Targetable.h"
 #include "SkillExecutor.h"
+#include "ResourceProvider.h"
 #include "PlayerCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChainAttackSkillFinish);
@@ -17,7 +18,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerHitReactionStart, EHitReact
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerHitReactionEnd);
 
 UCLASS()
-class ZGP_API APlayerCharacter : public ABaseCharacter, public ITaggable, public ITargetable, public ISkillExecutor
+class ZGP_API APlayerCharacter : public ABaseCharacter, public ITaggable, public ITargetable, public ISkillExecutor, public IResourceProvider
 {
 	GENERATED_BODY()
 
@@ -57,6 +58,11 @@ public:
 	// Combat
 	virtual void ApplyCombatEffect_Implementation(const FDamageData& DamageData) override;
 
+	// Resource
+	virtual bool HasResource_Implementation(float EnergyCost, float DecibelCost) const override;
+	virtual void ConsumeResource_Implementation(float EnergyCost, float DecibelCost) override;
+	virtual void AddResource_Implementation(float EnergyGain, float DecibelGain) override;
+
 	UFUNCTION(BlueprintCallable)
 	void RequestParryAttack(AActor* ParriedEnemy);
 
@@ -67,16 +73,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Assist")
 	void ExecuteQuickAssistSkill(AActor* TargetEnemy);
 
-	// 현재 HitReaction Type 조회
+	// 조회
 	EHitReactionType GetCurrentHitReactionType() const { return m_eCurrentHitReactionType; }
-
 	class USkillComponent* GetSkillComponent() const { return m_pSkillComponent; }
+	class UResourceComponent* GetResourceComponent() const { return m_pResourceComponent; }
 
 	// Hard Lock Setting (Controller에서 호출)
 	void SetHardLockTarget(AActor* Target);
 	void ClearHardLockTarget();
-
-
 
 	UPROPERTY(BlueprintAssignable, Category = "Combat")
 	FOnChainAttackSkillFinish OnChainAttackSkillFinish;
@@ -118,6 +122,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<class UPlayerCameraComponent> m_pPlayerCameraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<class UResourceComponent> m_pResourceComponent;
 
 	// Skill ID
 	UPROPERTY(EditDefaultsOnly)

@@ -3,6 +3,7 @@
 
 #include "CombatComponent.h"
 #include "CombatInteraction.h"
+#include "ResourceProvider.h"
 #include "DamageData.h"
 #include "DrawDebugHelpers.h"
 
@@ -42,6 +43,9 @@ void UCombatComponent::PerformAttackTrace(const FAttackData& AttackData)
 	TArray<FHitResult> HitResult;
 	ExecuteTrace(TraceStart, TraceEnd, AttackData.Radius, HitResult);
 
+	// 타격 모션 당 1회 Resource 축적
+	bool bHasGrantedResource = false;
+
 	for (const FHitResult& Hit : HitResult)
 	{
 		AActor* HitActor = Hit.GetActor();
@@ -58,6 +62,13 @@ void UCombatComponent::PerformAttackTrace(const FAttackData& AttackData)
 		}
 
 		ApplyDamage(HitActor, AttackData, Hit);
+
+		// Add Resource
+		if (!bHasGrantedResource && Owner->Implements<UResourceProvider>())
+		{
+			IResourceProvider::Execute_AddResource(Owner, AttackData.ResourceGain, AttackData.DecibelGain);
+			bHasGrantedResource = true;
+		}
 
 		FVector HitDirection = (HitActor->GetActorLocation() - OwnerLocation).GetSafeNormal();
 		OnAttackHit.Broadcast(HitActor, Hit.ImpactPoint, HitDirection);

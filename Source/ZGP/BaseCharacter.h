@@ -76,4 +76,5 @@ public:
 	UActionStateComponent* GetActionStateComponent() const;
 	UHealthComponent* GetHealthComponent() const;
 	UAttributeAnomalyComponent* GetAttributeAnomalyComponent() const;
+	UCombatComponent* GetCombatComponent() const;
 };

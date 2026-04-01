@@ -73,11 +73,11 @@ public:
 	float DecibelCost = 0.0f;
 
 	// Resource 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Resource")
-	float ResourceGain = 0.f;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Resource")
+	//float ResourceGain = 0.f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Resource")
-	float DecibelGain = 0.f;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Resource")
+	//float DecibelGain = 0.f;
 
 	// Cancel
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Cancel")

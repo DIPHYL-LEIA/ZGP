@@ -203,3 +203,8 @@ UAttributeAnomalyComponent* ABaseCharacter::GetAttributeAnomalyComponent() const
 	return m_pAttributeAnomalyComponent;
 }
 
+UCombatComponent* ABaseCharacter::GetCombatComponent() const
+{
+	return m_pCombatComponent;
+}
+

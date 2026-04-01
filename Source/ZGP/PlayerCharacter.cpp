@@ -14,6 +14,7 @@
 #include "DodgeComponent.h"
 #include "PlayerLocoComponent.h"
 #include "PlayerCameraComponent.h"
+#include "ResourceComponent.h"
 
 #include "TargetProvider.h"
 #include "Targetable.h"
@@ -57,6 +58,7 @@ APlayerCharacter::APlayerCharacter()
 	m_pDodgeCompComponent = CreateDefaultSubobject<UDodgeComponent>(TEXT("DodgeComponent"));
 	m_pPlayerLocoComponent = CreateDefaultSubobject<UPlayerLocoComponent>(TEXT("PlayerLocoComponent"));
 	m_pPlayerCameraComponent = CreateDefaultSubobject<UPlayerCameraComponent>(TEXT("PlayerCameraComponent"));
+	m_pResourceComponent = CreateDefaultSubobject<UResourceComponent>(TEXT("ResourceComponent"));
 }
 
 void APlayerCharacter::BeginPlay()
@@ -526,6 +528,32 @@ void APlayerCharacter::ApplyCombatEffect_Implementation(const FDamageData& Damag
 
 	UE_LOG(LogTemp, Warning, TEXT("[PlayerCharacter] Calling Super::ApplyCombatEffect"));
 	Super::ApplyCombatEffect_Implementation(DamageData);
+}
+
+bool APlayerCharacter::HasResource_Implementation(float EnergyCost, float DecibelCost) const
+{
+	if (!m_pResourceComponent) return false;
+
+	if (!m_pResourceComponent->HasEnoughEnergy(EnergyCost)) return false;
+	if (!m_pResourceComponent->HasEnoughDecibel(DecibelCost)) return false;
+
+	return true;
+}
+
+void APlayerCharacter::ConsumeResource_Implementation(float EnergyCost, float DecibelCost)
+{
+	if (!m_pResourceComponent) return;
+
+	m_pResourceComponent->ConsumeEnergy(EnergyCost);
+	m_pResourceComponent->ConsumeDecibel(DecibelCost);
+}
+
+void APlayerCharacter::AddResource_Implementation(float EnergyGain, float DecibelGain)
+{
+	if (!m_pResourceComponent) return;
+
+	m_pResourceComponent->AddEnergy(EnergyGain);
+	m_pResourceComponent->AddDecibel(DecibelGain);
 }
 
 void APlayerCharacter::RequestParryAttack(AActor* ParriedEnemy)
