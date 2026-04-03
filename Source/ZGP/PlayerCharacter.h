@@ -134,6 +134,12 @@ protected:
 	FName m_ParryAttackSkillID = FName("ParryAttack");
 
 	UPROPERTY(EditDefaultsOnly)
+	FName m_DodgeCounterSkillID = FName("DodgeCounter");
+
+	UPROPERTY(EditDefaultsOnly)
+	FName m_DashAttackSkillID = FName("DashAttack");
+
+	UPROPERTY(EditDefaultsOnly)
 	FName m_ReactiveAssistSkillID;
 
 	UPROPERTY(EditDefaultsOnly)
@@ -145,6 +151,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	float m_fForceTagOutDelay = 3.0f;
 
+	// Dodge
+	UPROPERTY(EditDefaultsOnly)
+	float m_fPerfectDodgeCounterWindow = 1.0f;
+
 	UPROPERTY(EditDefaultsOnly)
 	EHitReactionType m_eCurrentHitReactionType = EHitReactionType::NONE;
 
@@ -153,13 +163,21 @@ protected:
 	virtual void HandleHitReactionStart(EHitReactionType ReactionType, bool bCancel) override;
 	virtual void HandleHitReactionEnd() override;
 
+	virtual void OnMontageEndedAction(UAnimMontage* Montage, bool bInterrupted) override;
+
 private:
 	// 태그 시 남은 행동 처리
 	bool m_bPendingTagOut = false;
 	FTimerHandle ForceTagOutTimerHandle;
 
+	bool m_bPerfectDodgeTriggered = false;
+	FTimerHandle PerfectDodgeResetHandle;
+
 	UFUNCTION()
 	void HandlePerfectDodge();
+
+	UFUNCTION()
+	void ResetPerfectDodge();
 
 	UFUNCTION()
 	void HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted);
@@ -170,4 +188,5 @@ private:
 
 	AActor* GetCurrentTarget() const;
 	bool IsHardLock() const;
+
 };

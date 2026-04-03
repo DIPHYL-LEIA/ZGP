@@ -51,27 +51,33 @@ void ABaseCharacter::HandlePlayMontage(UAnimMontage* MontagePlay)
 	}
 }
 
+void ABaseCharacter::OnMontageEndedAction(UAnimMontage* Montage, bool bInterrupted)
+{
+}
+
 void ABaseCharacter::HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (GetMesh() && GetMesh()->GetAnimInstance())
-	{
-		GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &ABaseCharacter::HandleMontageEnded);
-	}
+	OnMontageEndedAction(Montage, bInterrupted);
 
-	if (Implements<USkillExecutor>())
-	{
-		ISkillExecutor::Execute_NotifySkillCompleted(this);
-	}
+	//if (GetMesh() && GetMesh()->GetAnimInstance())
+	//{
+	//	GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &ABaseCharacter::HandleMontageEnded);
+	//}
 
-	if (IsActionState(EActionState::HIT)) return;
+	//if (Implements<USkillExecutor>())
+	//{
+	//	ISkillExecutor::Execute_NotifySkillCompleted(this);
+	//}
 
-	if (m_pActionStateComponent && m_pActionStateComponent->IsTemporaryState())
-	{
-		if (!IsActionState(EActionState::DEAD))
-		{
-			SetActionState(EActionState::IDLE);
-		}
-	}
+	//if (IsActionState(EActionState::HIT)) return;
+
+	//if (m_pActionStateComponent && m_pActionStateComponent->IsTemporaryState())
+	//{
+	//	if (!IsActionState(EActionState::DEAD))
+	//	{
+	//		SetActionState(EActionState::IDLE);
+	//	}
+	//}
 }
 
 void ABaseCharacter::HandleHitReactionStart(EHitReactionType ReactionType, bool bCancel)
@@ -201,10 +207,5 @@ UHealthComponent* ABaseCharacter::GetHealthComponent() const
 UAttributeAnomalyComponent* ABaseCharacter::GetAttributeAnomalyComponent() const
 {
 	return m_pAttributeAnomalyComponent;
-}
-
-UCombatComponent* ABaseCharacter::GetCombatComponent() const
-{
-	return m_pCombatComponent;
 }
 

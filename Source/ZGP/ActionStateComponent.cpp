@@ -89,6 +89,11 @@ bool UActionStateComponent::CanChangeActionState(EActionState NewState) const
 	//	return true;
 	//}
 
+	if (m_currentState == EActionState::DODGING && NewState == EActionState::ATTACKING)
+	{
+		return true;
+	}
+
 	return false;
 }
 

@@ -291,3 +291,13 @@ void AEnemyCharacter::HandleDied(AActor* Character)
 	// »ç¸Á Ã³¸®
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
+
+void AEnemyCharacter::OnMontageEndedAction(UAnimMontage* Montage, bool bInterrupted)
+{
+	Super::OnMontageEndedAction(Montage, bInterrupted);
+
+	if (m_pEnemySkillComponent)
+	{
+		m_pEnemySkillComponent->NotifyAttackCompleted();
+	}
+}

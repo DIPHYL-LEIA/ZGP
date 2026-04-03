@@ -83,4 +83,6 @@ protected:
 	UFUNCTION()
 	void HandleDied(AActor* Character);
 
+	virtual void OnMontageEndedAction(UAnimMontage* Montage, bool bInterrupted) override;
+
 };

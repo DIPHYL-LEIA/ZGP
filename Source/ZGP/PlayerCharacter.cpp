@@ -139,6 +139,36 @@ void APlayerCharacter::RequestAttack()
 		m_pPlayerLocoComponent->StartAttackHoming(Target);
 	}
 
+	// 1. Perfect Dodge -> Dodge Counter
+	if (m_bPerfectDodgeTriggered && m_pSkillComponent)
+	{
+		m_bPerfectDodgeTriggered = false;
+
+		if (UWorld* World = GetWorld())
+		{
+			World->GetTimerManager().ClearTimer(PerfectDodgeResetHandle);
+		}
+
+		SetActionState(EActionState::ATTACKING);
+		if (!m_pSkillComponent->ExecuteSkillID(m_DodgeCounterSkillID))
+		{
+			SetActionState(EActionState::IDLE);
+		}
+		return;
+	}
+
+	// 2. Dodge Áß Dash Attack
+	if (IsActionState(EActionState::DODGING) && m_pSkillComponent)
+	{
+		SetActionState(EActionState::ATTACKING);
+		if (!m_pSkillComponent->ExecuteSkillID(m_DashAttackSkillID))
+		{
+			SetActionState(EActionState::DODGING);
+		}
+		return;
+	}
+
+	// 3. ÀÏ¹Ý ÄÞº¸
 	if (m_pComboComponent)
 	{
 		m_pComboComponent->RequestComboAttack();
@@ -329,9 +359,33 @@ void APlayerCharacter::HandleHitReactionEnd()
 	OnPlayerHitReactionEnd.Broadcast();
 }
 
+void APlayerCharacter::OnMontageEndedAction(UAnimMontage* Montage, bool bInterrupted)
+{
+	Super::OnMontageEndedAction(Montage, bInterrupted);
+
+	if (m_pSkillComponent)
+	{
+		m_pSkillComponent->NotifySkillCompleted();
+	}
+	//HandleSkillMontageEnded();
+}
+
 void APlayerCharacter::HandlePerfectDodge()
 {
+	m_bPerfectDodgeTriggered = true;
 	OnPlayerPerfectDodge.Broadcast();
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		World->GetTimerManager().ClearTimer(PerfectDodgeResetHandle);
+		World->GetTimerManager().SetTimer(PerfectDodgeResetHandle, this, &APlayerCharacter::ResetPerfectDodge, m_fPerfectDodgeCounterWindow, false);
+	}
+}
+
+void APlayerCharacter::ResetPerfectDodge()
+{
+	m_bPerfectDodgeTriggered = false;
 }
 
 void APlayerCharacter::HandleActionMontageEnded(UAnimMontage* Montage, bool bInterrupted)

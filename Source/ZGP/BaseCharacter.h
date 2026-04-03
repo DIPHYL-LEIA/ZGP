@@ -39,6 +39,9 @@ protected:
 	TObjectPtr<class UHitReactionComponent> m_pHitReactionComponent;
 
 	UFUNCTION()
+	virtual void OnMontageEndedAction(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
 	void HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	// Hit Reaction
@@ -76,5 +79,4 @@ public:
 	UActionStateComponent* GetActionStateComponent() const;
 	UHealthComponent* GetHealthComponent() const;
 	UAttributeAnomalyComponent* GetAttributeAnomalyComponent() const;
-	UCombatComponent* GetCombatComponent() const;
 };
