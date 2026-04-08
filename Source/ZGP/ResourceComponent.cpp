@@ -60,6 +60,9 @@ void UResourceComponent::AddEnergy(float Amount)
 
 	m_fCurrentEnergy = FMath::Clamp(m_fCurrentEnergy + Amount, 0.f, m_fMaxEnergy);
 	OnEnergyChanged.Broadcast(m_fCurrentEnergy, m_fMaxEnergy);
+
+	UE_LOG(LogTemp, Warning, TEXT("[Resource] Energy: %.1f / %.1f (+%.1f)"),
+		m_fCurrentEnergy, m_fMaxEnergy, Amount);
 }
 
 void UResourceComponent::AddDecibel(float Amount)
@@ -68,6 +71,9 @@ void UResourceComponent::AddDecibel(float Amount)
 
 	m_fCurrentDecibel = FMath::Clamp(m_fCurrentDecibel + Amount, 0.f, m_fMaxDecibel);
 	OnDecibelChanged.Broadcast(m_fCurrentDecibel, m_fMaxDecibel);
+
+	UE_LOG(LogTemp, Warning, TEXT("[Resource] Decibel: %.1f / %.1f (+%.1f)"),
+		m_fCurrentDecibel, m_fMaxDecibel, Amount);
 }
 
 void UResourceComponent::ResetDecibel()

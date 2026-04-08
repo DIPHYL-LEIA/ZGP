@@ -2,8 +2,8 @@
 
 
 #include "EnemyFlashComponent.h"
-#include "EnemySkillComponent.h"
-#include "EnemyAttackSelectorComponent.h"
+//#include "EnemySkillComponent.h"
+//#include "EnemyAttackSelectorComponent.h"
 
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -21,10 +21,10 @@ void UEnemyFlashComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (m_bAutoBindSkillComponent)
-	{
-		BindSkillComponent();
-	}
+	//if (m_bAutoBindSkillComponent)
+	//{
+	//	BindSkillComponent();
+	//}
 }
 
 void UEnemyFlashComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -180,40 +180,40 @@ void UEnemyFlashComponent::OnFlashTimeExpired()
 	StopFlash();
 }
 
-void UEnemyFlashComponent::BindSkillComponent()
-{
-	AActor* Owner = GetOwner();
-	if (!Owner) return;
-
-	UEnemySkillComponent* EnemySkillComponent = Owner->FindComponentByClass<UEnemySkillComponent>();
-	if (EnemySkillComponent)
-	{
-		EnemySkillComponent->OnAttackStarted.AddDynamic(this, &UEnemyFlashComponent::HandleAttackStarted);
-	}
-}
-
-void UEnemyFlashComponent::HandleAttackStarted(FName AttackID)
-{
-	EAttackFlashType FlashType = GetFlashTypeAttack(AttackID);
-
-	if (FlashType != EAttackFlashType::NONE)
-	{
-		StartFlash(FlashType, AttackID);
-	}
-}
-
-EAttackFlashType UEnemyFlashComponent::GetFlashTypeAttack(FName AttackID) const
-{
-	AActor* Owner = GetOwner();
-	if (!Owner) return EAttackFlashType::NONE;
-
-	UEnemyAttackSelectorComponent* Selector = Owner->GetComponentByClass<UEnemyAttackSelectorComponent>();
-	if (!Selector) return EAttackFlashType::NONE;
-
-	FEnemyAttackData AttackData;
-	if (Selector->GetAttackData(AttackID, AttackData))
-	{
-		return AttackData.FlashType;
-	}
-	return EAttackFlashType::NONE;
-}
+//void UEnemyFlashComponent::BindSkillComponent()
+//{
+//	AActor* Owner = GetOwner();
+//	if (!Owner) return;
+//
+//	UEnemySkillComponent* EnemySkillComponent = Owner->FindComponentByClass<UEnemySkillComponent>();
+//	if (EnemySkillComponent)
+//	{
+//		EnemySkillComponent->OnAttackStarted.AddDynamic(this, &UEnemyFlashComponent::HandleAttackStarted);
+//	}
+//}
+//
+//void UEnemyFlashComponent::HandleAttackStarted(FName AttackID)
+//{
+//	EAttackFlashType FlashType = GetFlashTypeAttack(AttackID);
+//
+//	if (FlashType != EAttackFlashType::NONE)
+//	{
+//		StartFlash(FlashType, AttackID);
+//	}
+//}
+//
+//EAttackFlashType UEnemyFlashComponent::GetFlashTypeAttack(FName AttackID) const
+//{
+//	AActor* Owner = GetOwner();
+//	if (!Owner) return EAttackFlashType::NONE;
+//
+//	UEnemyAttackSelectorComponent* Selector = Owner->GetComponentByClass<UEnemyAttackSelectorComponent>();
+//	if (!Selector) return EAttackFlashType::NONE;
+//
+//	FEnemyAttackData AttackData;
+//	if (Selector->GetAttackData(AttackID, AttackData))
+//	{
+//		return AttackData.FlashType;
+//	}
+//	return EAttackFlashType::NONE;
+//}

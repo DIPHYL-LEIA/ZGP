@@ -68,6 +68,9 @@ void UCombatComponent::PerformAttackTrace(const FAttackData& AttackData)
 		{
 			IResourceProvider::Execute_AddResource(Owner, AttackData.ResourceGain, AttackData.DecibelGain);
 			bHasGrantedResource = true;
+
+			UE_LOG(LogTemp, Warning, TEXT("[CombatComp] Resource Granted - Energy: %.1f, Decibel: %.1f"),
+				AttackData.ResourceGain, AttackData.DecibelGain);
 		}
 
 		FVector HitDirection = (HitActor->GetActorLocation() - OwnerLocation).GetSafeNormal();

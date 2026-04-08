@@ -6,6 +6,7 @@
 #include "Enemy/EnemyUIComponent.h"
 #include "Enemy/EnemyAttackSelectorComponent.h"
 #include "Enemy/EnemySkillComponent.h"
+#include "Enemy/EnemyFlashComponent.h"
 
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -22,7 +23,7 @@ AEnemyCharacter::AEnemyCharacter()
 	m_pEnemyUIComponent = CreateDefaultSubobject<UEnemyUIComponent>(TEXT("EnemyUIComponent"));
 	m_pEnemyAttackSelectorComponent = CreateDefaultSubobject<UEnemyAttackSelectorComponent>(TEXT("EnemyAttackSelectorComponent"));
 	m_pEnemySkillComponent = CreateDefaultSubobject<UEnemySkillComponent>(TEXT("EnemySkillComponent"));
-
+	m_pEnemyFlashComponent = CreateDefaultSubobject<UEnemyFlashComponent>(TEXT("EnemyFlashComponent"));
 
 	// Capsule Collision 
 	GetCapsuleComponent()->InitCapsuleSize(35.f, 90.f);
@@ -63,6 +64,11 @@ void AEnemyCharacter::BeginPlay()
 	if (m_pEnemySkillComponent)
 	{
 		m_pEnemySkillComponent->OnRequestPlayMontage.AddDynamic(this, &ABaseCharacter::HandlePlayMontage);
+	}
+
+	if (m_pEnemySkillComponent && m_pEnemyAttackSelectorComponent)
+	{
+		m_pEnemySkillComponent->OnCooldownRequest.AddDynamic(m_pEnemyAttackSelectorComponent, &UEnemyAttackSelectorComponent::StartAttackCooldown);
 	}
 
 	if (m_pEnemyUIComponent)

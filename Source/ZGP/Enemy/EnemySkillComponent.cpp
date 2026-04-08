@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "EnemySkillComponent.h"
-#include "EnemyAttackSelectorComponent.h"
 #include "Engine/DataTable.h"
 #include "Animation/AnimMontage.h"
 
@@ -103,13 +102,5 @@ const FEnemyAttackData* UEnemySkillComponent::FindAttackData(FName AttackID) con
 
 void UEnemySkillComponent::NotifyCooldownStart(FName AttackID)
 {
-	// EnemyAttackSelectorComponent에 쿨다운 시작 알림
-	AActor* Owner = GetOwner();
-	if (!Owner) return;
-
-	UEnemyAttackSelectorComponent* Selector = Owner->FindComponentByClass<UEnemyAttackSelectorComponent>();
-	if (Selector)
-	{
-		Selector->StartAttackCooldown(AttackID);
-	}
+	OnCooldownRequest.Broadcast(AttackID);
 }

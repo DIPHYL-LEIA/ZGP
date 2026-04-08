@@ -10,6 +10,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyRequestPlayMontage, UAnimMontage*, MontageToPlay);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyAttackCompleted);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyAttackStarted, FName, AttackID);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCooldownRequest, FName, AttackID);
 
 /**
  * Enemy 공격 실행 컴포넌트
@@ -134,6 +135,10 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Attack")
 	FOnEnemyAttackStarted OnAttackStarted;
 
+	/** 쿨다운 요청 - EnemyCharacter에서 중개 */
+	UPROPERTY(BlueprintAssignable, Category = "Attack")
+	FOnCooldownRequest OnCooldownRequest;
+
 private:
 	/**
 	 * 공격 데이터 조회
@@ -144,6 +149,7 @@ private:
 
 	/**
 	 * 쿨다운 시작 알림
+	 * EnemyCharacter에서 중개하여
 	 * EnemyAttackSelectorComponent에 전달
 	 */
 	void NotifyCooldownStart(FName AttackID);

@@ -85,11 +85,11 @@ protected:
 	bool m_bUseAutoStop = true;					// 자동 종료 사용 여부
 
 	// 자동 구독(EnemySkillComponent)
-	UPROPERTY(EditDefaultsOnly)
-	bool m_bAutoBindSkillComponent = true;
+	//UPROPERTY(EditDefaultsOnly)
+	//bool m_bAutoBindSkillComponent = true;
 
 private:
-	bool m_bIsFlashing = false;;
+	bool m_bIsFlashing = false;
 	EAttackFlashType m_eCurrentFlashType = EAttackFlashType::NONE;
 	FName m_CurrentAttackID = NAME_None;
 
@@ -102,10 +102,10 @@ private:
 	void CleanNiagaraEffect();
 	void PlayFlashSound(EAttackFlashType FlashType);
 	void OnFlashTimeExpired();
-	void BindSkillComponent();
+	//void BindSkillComponent();
 
-	UFUNCTION()
-	void HandleAttackStarted(FName AttackID);
+	//UFUNCTION()
+	//void HandleAttackStarted(FName AttackID);
 
-	EAttackFlashType GetFlashTypeAttack(FName AttackID) const;
+	//EAttackFlashType GetFlashTypeAttack(FName AttackID) const;
 };

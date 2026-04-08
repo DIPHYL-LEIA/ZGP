@@ -2,10 +2,7 @@
 
 
 #include "AnimNotifyState_ParryWindow.h"
-#include "../ParryDetectorComponent.h"
 #include "../CombatInteraction.h"
-#include "Kismet/GameplayStatics.h"
-#include "GameFramework/PlayerController.h"
 
 void UAnimNotifyState_ParryWindow::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
